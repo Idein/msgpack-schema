@@ -1,4 +1,4 @@
-# msgpack-schema
+# msgpack-schema [![Crates.io](https://img.shields.io/crates/v/msgpack-schema)](https://crates.io/crates/msgpack-schema) [![docs.rs](https://img.shields.io/docsrs/msgpack-schema)](https://docs.rs/msgpack-schema/)
 
 _msgpack-schema_ is a schema language for describing data formats encoded in MessagePack.
 It provides two derive macros `Serialize` and `Deserialize` that allow you to transcode MessagePack binary data to/from Rust data structures in a type-directed way.
