@@ -203,7 +203,7 @@ MessagePack
 ```rust
 enum E {
     #[tag = 3]
-    Cat
+    Foo
 }
 ```
 
@@ -211,7 +211,7 @@ enum E {
 <td>
 
 ```rust
-E::Cat
+E::Foo
 ```
 
 </td>
@@ -230,7 +230,7 @@ E::Cat
 ```rust
 enum E {
     #[tag = 3]
-    Cat()
+    Foo()
 }
 ```
 
@@ -238,7 +238,7 @@ enum E {
 <td>
 
 ```rust
-E::Cat()
+E::Foo()
 ```
 
 </td>
@@ -275,7 +275,7 @@ MessagePack
 ```rust
 enum E {
     #[tag = 3]
-    Cat(u32)
+    Foo(u32)
 }
 ```
 
@@ -283,7 +283,7 @@ enum E {
 <td>
 
 ```rust
-E::Cat(42)
+E::Foo(42)
 ```
 
 </td>
@@ -323,8 +323,8 @@ MessagePack
 #[derive(Serialize, Deserialize)]
 #[untagged]
 enum Animal {
-    Dog(String),
-    Cat(u32),
+    Foo(String),
+    Bar(u32),
 }
 ```
 
@@ -332,7 +332,7 @@ enum Animal {
 <td>
 
 ```rust
-E::Cat(42)
+E::Bar(42)
 ```
 
 </td>
