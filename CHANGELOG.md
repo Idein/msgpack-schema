@@ -20,7 +20,13 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## [Released]
 
-## 1.0.1 - 2021-06-08
+## 0.1.2 - 2021-06-10
+
+### Added
+
+- Add a blanket implementation `impl<T: Serialize> Serialize for &T`
+
+## 0.1.1 - 2021-06-08
 
 Initial version
 
