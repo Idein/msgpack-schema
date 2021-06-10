@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ### Added
 
+- Add a blanket implementation `impl<T: Serialize> Serialize for &T`
+
 ### Fixed
 
 ### Removed

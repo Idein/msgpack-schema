@@ -93,6 +93,15 @@ pub trait Serialize {
         S: Serializer;
 }
 
+impl<T: Serialize> Serialize for &T {
+    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    where
+        S: Serializer,
+    {
+        T::serialize(*self, serializer)
+    }
+}
+
 impl Serialize for bool {
     fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
     where
