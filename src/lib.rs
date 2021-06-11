@@ -1,7 +1,7 @@
 //! _msgpack-schema_ is a schema language for describing data formats encoded in MessagePack.
 //! It provides two derive macros `Serialize` and `Deserialize` that allow you to transcode MessagePack binary data to/from Rust data structures in a type-directed way.
 //!
-//! ```rust
+//! ```rust,ignore
 //! use msgpack_schema::{Deserialize, Serialize};
 //!
 //! #[derive(Deserialize, Serialize)]
@@ -41,7 +41,7 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! struct S {
 //!     #[tag = 0]
 //!     foo: u32,
@@ -53,7 +53,7 @@
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! S { foo: 42, bar: "hello".to_owned() }
 //! ```
 //!
@@ -94,14 +94,14 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! struct S(u32)
 //! ```
 //!
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! S(42)
 //! ```
 //!
@@ -136,14 +136,14 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! struct S
 //! ```
 //!
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! S
 //! ```
 //!
@@ -157,14 +157,14 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! struct S()
 //! ```
 //!
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! S()
 //! ```
 //!
@@ -197,7 +197,7 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! enum E {
 //!     #[tag = 3]
 //!     Foo
@@ -207,7 +207,7 @@
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! E::Foo
 //! ```
 //!
@@ -224,7 +224,7 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! enum E {
 //!     #[tag = 3]
 //!     Foo()
@@ -234,7 +234,7 @@
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! E::Foo()
 //! ```
 //!
@@ -269,7 +269,7 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! enum E {
 //!     #[tag = 3]
 //!     Foo(u32)
@@ -279,7 +279,7 @@
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! E::Foo(42)
 //! ```
 //!
@@ -316,7 +316,7 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! #[derive(Serialize, Deserialize)]
 //! #[untagged]
 //! enum Animal {
@@ -328,7 +328,7 @@
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! E::Bar(42)
 //! ```
 //!
