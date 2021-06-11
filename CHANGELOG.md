@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog][keep a changelog] and this project adheres to [Semantic Versioning][semantic versioning].
+The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] and this project adheres to [Semantic Versioning][https://semver.org/spec/v2.0.0.html].
 
 ## [Unreleased]
 
@@ -20,7 +20,18 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## 0.1.3 - 2021-06-12
 
-This release only includes doc improvements and typo fixes.
+This release mainly includes doc improvements and typo fixes.
+
+### Removed
+
+- `Value`
+- `TryFromValueError`
+- `value::{Serializer, Deserializer, serialize, deserialize}`
+
+### Changed
+
+- Move `Any` to `value::Any`
+- Move `Nil` to `value::Nil`
 
 ## 0.1.2 - 2021-06-10
 
