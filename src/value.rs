@@ -683,10 +683,14 @@ impl crate::Serializer for Serializer {
         Ok(())
     }
     fn serialize_map(&mut self, len: u32) -> Result<(), Self::Error> {
-        let vec = iter::repeat((Value::Nil, Value::Nil))
-            .take(len as usize)
-            .collect();
-        self.stack.push((0, Value::Map(vec)));
+        if len == 0 {
+            self.push_atom(Value::Map(vec![]));
+        } else {
+            let vec = iter::repeat((Value::Nil, Value::Nil))
+                .take(len as usize)
+                .collect();
+            self.stack.push((0, Value::Map(vec)));
+        }
         Ok(())
     }
     fn serialize_ext(&mut self, tag: i8, v: &[u8]) -> Result<(), Self::Error> {
