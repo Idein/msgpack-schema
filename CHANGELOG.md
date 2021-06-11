@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ## [Released]
 
+## 0.1.5 - 2021-06-12
+
+### Fixed
+
+- Fix serialization of 0-length map value
+- Fix deserialization of FixExt8 and FixExt16
+
 ## 0.1.4 - 2021-06-12
 
 ### Fixed
