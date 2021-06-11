@@ -1033,11 +1033,11 @@ impl<R: io::Read> Deserializer for BinaryDeserializer<R> {
             }
             rmp::Marker::FixExt8 => {
                 let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(16)?)
+                Token::Ext(tag, self.r.read_to_vec(8)?)
             }
             rmp::Marker::FixExt16 => {
                 let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(1)?)
+                Token::Ext(tag, self.r.read_to_vec(16)?)
             }
             rmp::Marker::Ext8 => {
                 let len = self.r.read_u8()? as usize;
