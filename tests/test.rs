@@ -1,4 +1,8 @@
-use msgpack_schema::{value::Value, *};
+use msgpack_schema::{
+    value::{Bin, Value},
+    *,
+};
+use proptest::prelude::*;
 
 #[test]
 fn failing() {
@@ -320,4 +324,46 @@ fn deserialize_untagged_enum() {
 
     let val = Value::Int((-10).into());
     assert!(value::deserialize::<Animal>(val).is_err());
+}
+
+fn arb_value() -> impl Strategy<Value = Value> {
+    let leaf = prop_oneof![
+        Just(Value::Nil),
+        any::<bool>().prop_map(|v| v.into()),
+        any::<u64>().prop_map(|v| v.into()),
+        any::<i64>().prop_map(|v| v.into()),
+        any::<f32>().prop_map(|v| v.into()),
+        any::<f64>().prop_map(|v| v.into()),
+        ".*".prop_map(|v| v.into()),
+        ".*".prop_map(|v| Bin(v.into_bytes()).into()),
+        any::<i8>().prop_flat_map(|tag| ".*".prop_map(move |v| Value::Ext(tag, v.into_bytes()))),
+    ];
+    leaf.prop_recursive(
+        4,   // 4 levels deep
+        128, // Shoot for maximum size of 128 nodes
+        5,   // We put up to 5 items per collection
+        |inner| {
+            prop_oneof![
+                // Take the inner strategy and make the two recursive cases.
+                prop::collection::vec(inner.clone(), 0..=4).prop_map(|v| v.into()),
+                prop::collection::vec((inner.clone(), inner), 0..=4).prop_map(|v| v.into()),
+            ]
+        },
+    )
+}
+
+proptest! {
+    #[test]
+    fn test_binary(v in arb_value()) {
+        let mut buf = vec![];
+        msgpack_schema::serialize(&v, &mut buf).unwrap();
+        assert_eq!(v, msgpack_schema::deserialize(buf.as_slice()).unwrap());
+    }
+
+    #[test]
+    fn test_value(v in arb_value()) {
+        let x = value::serialize(&v);
+        assert_eq!(v, x);
+        assert_eq!(v, value::deserialize(x).unwrap());
+    }
 }

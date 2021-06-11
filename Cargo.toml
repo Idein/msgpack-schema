@@ -19,3 +19,4 @@ byteorder = "1"
 
 [dev-dependencies]
 trybuild = "1.0"
+proptest = "1"
