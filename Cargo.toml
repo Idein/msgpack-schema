@@ -5,7 +5,7 @@ authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
 edition = "2018"
 description = "A specification language for MessagePack data format"
 license = "MIT"
-repository = "https://github.com/Idein/msgpack-schem"
+repository = "https://github.com/Idein/msgpack-schema"
 documentation = "https://docs.rs/msgpack-schema"
 categories = ["encoding"]
 
