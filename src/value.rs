@@ -101,6 +101,7 @@ impl std::fmt::Display for Int {
     }
 }
 
+/// Error type returned by `TryFrom<Int>` implementations.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Error)]
 #[error("out of range integral type conversion attempted")]
 pub struct TryFromIntError(());
@@ -219,6 +220,31 @@ impl TryFrom<Int> for isize {
     }
 }
 
+/// String objects of MessagePack are essentially byte arrays type that may contain any bytes.
+///
+/// # String type vs Binary type
+///
+/// MessagePack has a complicated history about its distinction between string type and binary type.
+///
+/// While an earlier version of MessagePack had only one type for encoding a binary data, namely the raw type,
+/// it was later divided into two distinct types for supporting use cases in dynamically-typed languages. [^1]
+/// The string type, one of the newly added types, is essentially what was originally called the raw type.
+/// Because of this origin, despite its name, string objects of MessagePack can contain not just valid UTF-8 sequences but also any byte sequences.
+/// And encoding non-UTF-8 byte sequences as a string object is a *perfectly valid* and *expected* usage by the spec authors.
+///
+/// [^1]: [https://github.com/msgpack/msgpack/issues/121](https://github.com/msgpack/msgpack/issues/121)
+///
+/// # So which to use in encoding my binary data?
+///
+/// When you decide to implement a custom serializer/deserializer for your own binary type,
+/// it is recommended to use _string type_ instead of binary type for its encoding scheme for the following reasons.
+///
+/// - It just saves some memory. If your byte array is less than 32 byte length, using string type instead of byte array saves one byte per object.
+/// - The disiction only matters when _not_ using a data schema. Because this crate offers a statically-typed data schema, and we know how to decode data into a Rust object at compile time,
+/// distinction of these types in the input binary data is almost useless,
+///
+/// Although we strongly recommend you to use string types rather than binary types, this crate does _not_ force you to do so.
+/// The functions and trait implementations provided by this crate are all taking a neutral stand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Str(pub Vec<u8>);
 
@@ -234,6 +260,9 @@ impl Str {
     }
 }
 
+/// Byte array type.
+///
+/// As noted in the comment in [Str], using this type in this crate is almost nonsense, unless your data schema is shared by some external data providers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bin(pub Vec<u8>);
 
@@ -243,6 +272,7 @@ impl Bin {
     }
 }
 
+#[doc(hidden)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum Value {
     Nil,
@@ -371,6 +401,7 @@ impl From<Vec<(Value, Value)>> for Value {
     }
 }
 
+#[doc(hidden)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Error)]
 #[error("value is not of the expected type")]
 pub struct TryFromValueError(());
@@ -558,7 +589,7 @@ impl Value {
     }
 }
 
-pub struct Serializer {
+struct Serializer {
     stack: Vec<(usize, Value)>,
 }
 
@@ -664,6 +695,7 @@ impl crate::Serializer for Serializer {
     }
 }
 
+#[doc(hidden)]
 pub fn serialize<S: crate::Serialize>(x: &S) -> Value {
     let mut serializer = Serializer::new();
     x.serialize(&mut serializer)
@@ -729,7 +761,7 @@ impl Value {
     }
 }
 
-pub struct Deserializer {
+struct Deserializer {
     iter: Box<dyn Iterator<Item = Token>>,
 }
 
@@ -753,6 +785,7 @@ impl crate::Deserializer for Deserializer {
     }
 }
 
+#[doc(hidden)]
 pub fn deserialize<D: crate::Deserialize>(
     value: Value,
 ) -> Result<D, crate::DeserializeError<Infallible>> {
@@ -793,5 +826,67 @@ impl crate::Deserialize for Value {
             Token::Ext(tag, data) => Value::Ext(tag, data),
         };
         Ok(x)
+    }
+}
+
+/// A special type for serializing and deserializing the `nil` object.
+///
+/// In our data model `()` does not represent the `nil` object because `()` should be zero-byte but `nil` has a size.
+/// When you want to serialize or deserialize `nil` use this type instead.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Nil;
+
+impl crate::Serialize for Nil {
+    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    where
+        S: crate::Serializer,
+    {
+        serializer.serialize_nil()
+    }
+}
+
+impl crate::Deserialize for Nil {
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError<D::Error>>
+    where
+        D: crate::Deserializer,
+    {
+        let token = deserializer.deserialize()?;
+        if token != Token::Nil {
+            return Err(crate::DeserializeError::InvalidType);
+        }
+        Ok(Self)
+    }
+}
+
+/// A special type used to deserialize any object and discard it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Any;
+
+impl crate::Deserialize for Any {
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError<D::Error>>
+    where
+        D: crate::Deserializer,
+    {
+        let mut count = 1;
+        while count > 0 {
+            count -= 1;
+            match deserializer.deserialize()? {
+                Token::Nil
+                | Token::Bool(_)
+                | Token::Int(_)
+                | Token::F32(_)
+                | Token::F64(_)
+                | Token::Str(_)
+                | Token::Bin(_)
+                | Token::Ext(_, _) => {}
+                Token::Array(len) => {
+                    count += len;
+                }
+                Token::Map(len) => {
+                    count += len * 2;
+                }
+            }
+        }
+        Ok(Any)
     }
 }

@@ -6,7 +6,6 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io;
 use thiserror::Error;
-pub use value::Value;
 use value::{Bin, Int, Str};
 
 pub trait Serializer {
@@ -21,70 +20,6 @@ pub trait Serializer {
     fn serialize_array(&mut self, len: u32) -> Result<(), Self::Error>;
     fn serialize_map(&mut self, len: u32) -> Result<(), Self::Error>;
     fn serialize_ext(&mut self, tag: i8, v: &[u8]) -> Result<(), Self::Error>;
-}
-
-pub struct BinarySerializer<W> {
-    w: W,
-}
-
-impl<W: io::Write> BinarySerializer<W> {
-    pub fn new(w: W) -> Self {
-        Self { w }
-    }
-}
-
-impl<W: io::Write> Serializer for BinarySerializer<W> {
-    type Error = io::Error;
-    fn serialize_nil(&mut self) -> Result<(), Self::Error> {
-        rmp::encode::write_nil(&mut self.w)
-    }
-    fn serialize_bool(&mut self, v: bool) -> Result<(), Self::Error> {
-        rmp::encode::write_bool(&mut self.w, v)
-    }
-    fn serialize_int(&mut self, v: Int) -> Result<(), Self::Error> {
-        if let Ok(v) = i64::try_from(v) {
-            rmp::encode::write_sint(&mut self.w, v)?;
-        } else {
-            rmp::encode::write_uint(&mut self.w, u64::try_from(v).unwrap())?;
-        }
-        Ok(())
-    }
-    fn serialize_f32(&mut self, v: f32) -> Result<(), Self::Error> {
-        rmp::encode::write_f32(&mut self.w, v)?;
-        Ok(())
-    }
-    fn serialize_f64(&mut self, v: f64) -> Result<(), Self::Error> {
-        rmp::encode::write_f64(&mut self.w, v)?;
-        Ok(())
-    }
-    fn serialize_str(&mut self, v: &[u8]) -> Result<(), Self::Error> {
-        rmp::encode::write_str_len(&mut self.w, v.len() as u32)?;
-        self.w.write_all(v)?;
-        Ok(())
-    }
-    fn serialize_bin(&mut self, v: &[u8]) -> Result<(), Self::Error> {
-        rmp::encode::write_bin(&mut self.w, v)?;
-        Ok(())
-    }
-    fn serialize_array(&mut self, len: u32) -> Result<(), Self::Error> {
-        rmp::encode::write_array_len(&mut self.w, len)?;
-        Ok(())
-    }
-    fn serialize_map(&mut self, len: u32) -> Result<(), Self::Error> {
-        rmp::encode::write_map_len(&mut self.w, len)?;
-        Ok(())
-    }
-    fn serialize_ext(&mut self, tag: i8, data: &[u8]) -> Result<(), Self::Error> {
-        rmp::encode::write_ext_meta(&mut self.w, data.len() as u32, tag)?;
-        self.w.write_all(data)?;
-        Ok(())
-    }
-}
-
-pub fn serialize<S: Serialize, W: io::Write>(s: S, w: W) -> io::Result<()> {
-    let mut serializer = BinarySerializer::new(w);
-    s.serialize(&mut serializer)?;
-    Ok(())
 }
 
 pub trait Serialize {
@@ -351,131 +286,7 @@ pub trait Deserializer {
     fn deserialize(&mut self) -> Result<Token, Self::Error>;
 }
 
-trait ReadExt: ReadBytesExt {
-    fn read_to_vec(&mut self, len: usize) -> Result<Vec<u8>, io::Error> {
-        let mut buf = vec![];
-        buf.resize(len, 0);
-        self.read_exact(&mut buf)?;
-        Ok(buf)
-    }
-}
-
-impl<R: io::Read> ReadExt for R {}
-
-pub struct BinaryDeserializer<R> {
-    r: R,
-}
-
-impl<R: io::Read> BinaryDeserializer<R> {
-    pub fn new(r: R) -> Self {
-        Self { r }
-    }
-}
-
-impl<R: io::Read> Deserializer for BinaryDeserializer<R> {
-    type Error = io::Error;
-
-    fn deserialize(&mut self) -> Result<Token, Self::Error> {
-        let token = match rmp::decode::read_marker(&mut self.r)
-            .map_err(|rmp::decode::MarkerReadError(err)| err)?
-        {
-            rmp::Marker::Null => Token::Nil,
-            rmp::Marker::True => Token::Bool(true),
-            rmp::Marker::False => Token::Bool(false),
-            rmp::Marker::FixPos(v) => Token::Int(Int::from(v)),
-            rmp::Marker::FixNeg(v) => Token::Int(Int::from(v)),
-            rmp::Marker::U8 => Token::Int(Int::from(self.r.read_u8()?)),
-            rmp::Marker::U16 => Token::Int(Int::from(self.r.read_u16::<BigEndian>()?)),
-            rmp::Marker::U32 => Token::Int(Int::from(self.r.read_u32::<BigEndian>()?)),
-            rmp::Marker::U64 => Token::Int(Int::from(self.r.read_u64::<BigEndian>()?)),
-            rmp::Marker::I8 => Token::Int(Int::from(self.r.read_i8()?)),
-            rmp::Marker::I16 => Token::Int(Int::from(self.r.read_i16::<BigEndian>()?)),
-            rmp::Marker::I32 => Token::Int(Int::from(self.r.read_i32::<BigEndian>()?)),
-            rmp::Marker::I64 => Token::Int(Int::from(self.r.read_i64::<BigEndian>()?)),
-            rmp::Marker::F32 => Token::F32(self.r.read_f32::<BigEndian>()?),
-            rmp::Marker::F64 => Token::F64(self.r.read_f64::<BigEndian>()?),
-            rmp::Marker::FixStr(len) => {
-                let len = len as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::Str8 => {
-                let len = self.r.read_u8()? as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::Str16 => {
-                let len = self.r.read_u16::<BigEndian>()? as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::Str32 => {
-                let len = self.r.read_u32::<BigEndian>()? as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::Bin8 => {
-                let len = self.r.read_u8()? as usize;
-                Token::Bin(Bin(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::Bin16 => {
-                let len = self.r.read_u16::<BigEndian>()? as usize;
-                Token::Bin(Bin(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::Bin32 => {
-                let len = self.r.read_u32::<BigEndian>()? as usize;
-                Token::Bin(Bin(self.r.read_to_vec(len)?))
-            }
-            rmp::Marker::FixArray(len) => Token::Array(len as u32),
-            rmp::Marker::Array16 => Token::Array(self.r.read_u16::<BigEndian>()? as u32),
-            rmp::Marker::Array32 => Token::Array(self.r.read_u32::<BigEndian>()? as u32),
-            rmp::Marker::FixMap(len) => Token::Map(len as u32),
-            rmp::Marker::Map16 => Token::Map(self.r.read_u16::<BigEndian>()? as u32),
-            rmp::Marker::Map32 => Token::Map(self.r.read_u32::<BigEndian>()? as u32),
-            rmp::Marker::FixExt1 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(1)?)
-            }
-            rmp::Marker::FixExt2 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(2)?)
-            }
-            rmp::Marker::FixExt4 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(4)?)
-            }
-            rmp::Marker::FixExt8 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(16)?)
-            }
-            rmp::Marker::FixExt16 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(1)?)
-            }
-            rmp::Marker::Ext8 => {
-                let len = self.r.read_u8()? as usize;
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(len)?)
-            }
-            rmp::Marker::Ext16 => {
-                let len = self.r.read_u16::<BigEndian>()? as usize;
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(len)?)
-            }
-            rmp::Marker::Ext32 => {
-                let len = self.r.read_u32::<BigEndian>()? as usize;
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(len)?)
-            }
-            rmp::Marker::Reserved => Token::Nil,
-        };
-        Ok(token)
-    }
-}
-
-pub fn deserialize<D: Deserialize, R: io::Read>(r: R) -> Result<D, DeserializeError<io::Error>> {
-    let mut deserializer = BinaryDeserializer::new(r);
-    Ok(D::deserialize(&mut deserializer)?)
-}
-
 #[derive(Debug, Error)]
-#[non_exhaustive]
 pub enum DeserializeError<E: std::error::Error> {
     #[error(transparent)]
     Deserializer(#[from] E),
@@ -720,61 +531,193 @@ impl<T: Deserialize> Deserialize for Vec<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Nil;
+pub struct BinarySerializer<W> {
+    w: W,
+}
 
-impl Serialize for Nil {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_nil()
+impl<W: io::Write> BinarySerializer<W> {
+    pub fn new(w: W) -> Self {
+        Self { w }
     }
 }
 
-impl Deserialize for Nil {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
-    where
-        D: Deserializer,
-    {
-        let token = deserializer.deserialize()?;
-        if token != Token::Nil {
-            return Err(DeserializeError::InvalidType);
+impl<W: io::Write> Serializer for BinarySerializer<W> {
+    type Error = io::Error;
+    fn serialize_nil(&mut self) -> Result<(), Self::Error> {
+        rmp::encode::write_nil(&mut self.w)
+    }
+    fn serialize_bool(&mut self, v: bool) -> Result<(), Self::Error> {
+        rmp::encode::write_bool(&mut self.w, v)
+    }
+    fn serialize_int(&mut self, v: Int) -> Result<(), Self::Error> {
+        if let Ok(v) = i64::try_from(v) {
+            rmp::encode::write_sint(&mut self.w, v)?;
+        } else {
+            rmp::encode::write_uint(&mut self.w, u64::try_from(v).unwrap())?;
         }
-        Ok(Self)
+        Ok(())
+    }
+    fn serialize_f32(&mut self, v: f32) -> Result<(), Self::Error> {
+        rmp::encode::write_f32(&mut self.w, v)?;
+        Ok(())
+    }
+    fn serialize_f64(&mut self, v: f64) -> Result<(), Self::Error> {
+        rmp::encode::write_f64(&mut self.w, v)?;
+        Ok(())
+    }
+    fn serialize_str(&mut self, v: &[u8]) -> Result<(), Self::Error> {
+        rmp::encode::write_str_len(&mut self.w, v.len() as u32)?;
+        self.w.write_all(v)?;
+        Ok(())
+    }
+    fn serialize_bin(&mut self, v: &[u8]) -> Result<(), Self::Error> {
+        rmp::encode::write_bin(&mut self.w, v)?;
+        Ok(())
+    }
+    fn serialize_array(&mut self, len: u32) -> Result<(), Self::Error> {
+        rmp::encode::write_array_len(&mut self.w, len)?;
+        Ok(())
+    }
+    fn serialize_map(&mut self, len: u32) -> Result<(), Self::Error> {
+        rmp::encode::write_map_len(&mut self.w, len)?;
+        Ok(())
+    }
+    fn serialize_ext(&mut self, tag: i8, data: &[u8]) -> Result<(), Self::Error> {
+        rmp::encode::write_ext_meta(&mut self.w, data.len() as u32, tag)?;
+        self.w.write_all(data)?;
+        Ok(())
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Any;
+/// Write out a MessagePack object.
+pub fn serialize<S: Serialize, W: io::Write>(s: S, w: W) -> io::Result<()> {
+    let mut serializer = BinarySerializer::new(w);
+    s.serialize(&mut serializer)?;
+    Ok(())
+}
 
-impl Deserialize for Any {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
-    where
-        D: Deserializer,
-    {
-        let mut count = 1;
-        while count > 0 {
-            count -= 1;
-            match deserializer.deserialize()? {
-                Token::Nil
-                | Token::Bool(_)
-                | Token::Int(_)
-                | Token::F32(_)
-                | Token::F64(_)
-                | Token::Str(_)
-                | Token::Bin(_)
-                | Token::Ext(_, _) => {}
-                Token::Array(len) => {
-                    count += len;
-                }
-                Token::Map(len) => {
-                    count += len * 2;
-                }
+trait ReadExt: ReadBytesExt {
+    fn read_to_vec(&mut self, len: usize) -> Result<Vec<u8>, io::Error> {
+        let mut buf = vec![];
+        buf.resize(len, 0);
+        self.read_exact(&mut buf)?;
+        Ok(buf)
+    }
+}
+
+impl<R: io::Read> ReadExt for R {}
+
+pub struct BinaryDeserializer<R> {
+    r: R,
+}
+
+impl<R: io::Read> BinaryDeserializer<R> {
+    pub fn new(r: R) -> Self {
+        Self { r }
+    }
+}
+
+impl<R: io::Read> Deserializer for BinaryDeserializer<R> {
+    type Error = io::Error;
+
+    fn deserialize(&mut self) -> Result<Token, Self::Error> {
+        let token = match rmp::decode::read_marker(&mut self.r)
+            .map_err(|rmp::decode::MarkerReadError(err)| err)?
+        {
+            rmp::Marker::Null => Token::Nil,
+            rmp::Marker::True => Token::Bool(true),
+            rmp::Marker::False => Token::Bool(false),
+            rmp::Marker::FixPos(v) => Token::Int(Int::from(v)),
+            rmp::Marker::FixNeg(v) => Token::Int(Int::from(v)),
+            rmp::Marker::U8 => Token::Int(Int::from(self.r.read_u8()?)),
+            rmp::Marker::U16 => Token::Int(Int::from(self.r.read_u16::<BigEndian>()?)),
+            rmp::Marker::U32 => Token::Int(Int::from(self.r.read_u32::<BigEndian>()?)),
+            rmp::Marker::U64 => Token::Int(Int::from(self.r.read_u64::<BigEndian>()?)),
+            rmp::Marker::I8 => Token::Int(Int::from(self.r.read_i8()?)),
+            rmp::Marker::I16 => Token::Int(Int::from(self.r.read_i16::<BigEndian>()?)),
+            rmp::Marker::I32 => Token::Int(Int::from(self.r.read_i32::<BigEndian>()?)),
+            rmp::Marker::I64 => Token::Int(Int::from(self.r.read_i64::<BigEndian>()?)),
+            rmp::Marker::F32 => Token::F32(self.r.read_f32::<BigEndian>()?),
+            rmp::Marker::F64 => Token::F64(self.r.read_f64::<BigEndian>()?),
+            rmp::Marker::FixStr(len) => {
+                let len = len as usize;
+                Token::Str(Str(self.r.read_to_vec(len)?))
             }
-        }
-        Ok(Any)
+            rmp::Marker::Str8 => {
+                let len = self.r.read_u8()? as usize;
+                Token::Str(Str(self.r.read_to_vec(len)?))
+            }
+            rmp::Marker::Str16 => {
+                let len = self.r.read_u16::<BigEndian>()? as usize;
+                Token::Str(Str(self.r.read_to_vec(len)?))
+            }
+            rmp::Marker::Str32 => {
+                let len = self.r.read_u32::<BigEndian>()? as usize;
+                Token::Str(Str(self.r.read_to_vec(len)?))
+            }
+            rmp::Marker::Bin8 => {
+                let len = self.r.read_u8()? as usize;
+                Token::Bin(Bin(self.r.read_to_vec(len)?))
+            }
+            rmp::Marker::Bin16 => {
+                let len = self.r.read_u16::<BigEndian>()? as usize;
+                Token::Bin(Bin(self.r.read_to_vec(len)?))
+            }
+            rmp::Marker::Bin32 => {
+                let len = self.r.read_u32::<BigEndian>()? as usize;
+                Token::Bin(Bin(self.r.read_to_vec(len)?))
+            }
+            rmp::Marker::FixArray(len) => Token::Array(len as u32),
+            rmp::Marker::Array16 => Token::Array(self.r.read_u16::<BigEndian>()? as u32),
+            rmp::Marker::Array32 => Token::Array(self.r.read_u32::<BigEndian>()? as u32),
+            rmp::Marker::FixMap(len) => Token::Map(len as u32),
+            rmp::Marker::Map16 => Token::Map(self.r.read_u16::<BigEndian>()? as u32),
+            rmp::Marker::Map32 => Token::Map(self.r.read_u32::<BigEndian>()? as u32),
+            rmp::Marker::FixExt1 => {
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(1)?)
+            }
+            rmp::Marker::FixExt2 => {
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(2)?)
+            }
+            rmp::Marker::FixExt4 => {
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(4)?)
+            }
+            rmp::Marker::FixExt8 => {
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(16)?)
+            }
+            rmp::Marker::FixExt16 => {
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(1)?)
+            }
+            rmp::Marker::Ext8 => {
+                let len = self.r.read_u8()? as usize;
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(len)?)
+            }
+            rmp::Marker::Ext16 => {
+                let len = self.r.read_u16::<BigEndian>()? as usize;
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(len)?)
+            }
+            rmp::Marker::Ext32 => {
+                let len = self.r.read_u32::<BigEndian>()? as usize;
+                let tag = self.r.read_i8()?;
+                Token::Ext(tag, self.r.read_to_vec(len)?)
+            }
+            rmp::Marker::Reserved => Token::Nil,
+        };
+        Ok(token)
     }
+}
+
+/// Read out a MessagePack object.
+pub fn deserialize<D: Deserialize, R: io::Read>(r: R) -> Result<D, DeserializeError<io::Error>> {
+    let mut deserializer = BinaryDeserializer::new(r);
+    Ok(D::deserialize(&mut deserializer)?)
 }
 
 #[cfg(test)]
@@ -829,7 +772,7 @@ mod tests {
                         name = Some(Deserialize::deserialize(deserializer)?);
                     }
                     _ => {
-                        let Any = Deserialize::deserialize(deserializer)?;
+                        let value::Any = Deserialize::deserialize(deserializer)?;
                     }
                 }
             }

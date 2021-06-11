@@ -1,4 +1,4 @@
-use msgpack_schema::*;
+use msgpack_schema::{value::Value, *};
 
 #[test]
 fn failing() {

@@ -124,7 +124,7 @@ fn derive_c_struct(
                 match __tag {
                     #( #filters )*
                     _ => {
-                        let ::msgpack_schema::Any = ::msgpack_schema::Deserialize::deserialize(__deserializer)?;
+                        let ::msgpack_schema::value::Any = ::msgpack_schema::Deserialize::deserialize(__deserializer)?;
                     }
                 }
             }
@@ -325,7 +325,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
         }
 
         quote! {
-            let __value = ::msgpack_schema::Value::deserialize(__deserializer)?;
+            let __value = ::msgpack_schema::value::Value::deserialize(__deserializer)?;
             #( #clauses )*
             Err(::msgpack_schema::DeserializeError::UnknownVariant)
         }
