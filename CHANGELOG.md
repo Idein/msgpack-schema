@@ -18,6 +18,10 @@ The format is based on [Keep a Changelog][keep a changelog] and this project adh
 
 ## [Released]
 
+## 0.1.3 - 2021-06-12
+
+This release only includes doc improvements and typo fixes.
+
 ## 0.1.2 - 2021-06-10
 
 ### Added
