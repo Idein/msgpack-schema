@@ -1066,6 +1066,47 @@ pub fn deserialize<D: Deserialize, R: io::Read>(r: R) -> Result<D, DeserializeEr
     Ok(D::deserialize(&mut deserializer)?)
 }
 
+/// Constructs a MessagePack object.
+///
+/// Return type is an opaque type implementing [Serialize].
+///
+/// # Example
+///
+/// ```
+/// # use msgpack_schema::{msgpack, value::Bin, Serialize, serialize};
+/// msgpack!(
+///   // array literal
+///   [
+///     // numeric literals
+///     0,
+///     -42,
+///     3.14,
+///     2.71f32,
+///     // actually any expression is allowed (as long as it's a supported type)
+///     1 + 2 + 3,
+///     // boolean
+///     true,
+///     false,
+///     // nil is a keyword denoting the nil object
+///     nil,
+///     // map object
+///     { "any value in key": nil },
+///     { 0: 1, "trailing comma is ok": nil, },
+///     // string literal to make a string object
+///     "hello",
+///     // Use an expression of [Bin] type to create a binary object
+///     Bin(vec![0xDE, 0xAD, 0xBE, 0xEF])
+///   ]
+/// )
+/// # ;
+/// ```
+#[macro_export]
+macro_rules! msgpack {
+    ( $( $tt: tt )+ ) => {
+        $crate::msgpack_value!($( $tt )+)
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1137,5 +1178,22 @@ mod tests {
         };
 
         assert_eq!(val, value::deserialize(value::serialize(&val)).unwrap())
+    }
+
+    #[test]
+    fn msgpack_macro() {
+        let val = Human {
+            age: 42,
+            name: "John".into(),
+        };
+        let mut buf1 = vec![];
+        serialize(&val, &mut buf1).unwrap();
+        let lit = msgpack!({
+            0: 42,
+            1: "John",
+        });
+        let mut buf2 = vec![];
+        serialize(&lit, &mut buf2).unwrap();
+        assert_eq!(buf1, buf2);
     }
 }
