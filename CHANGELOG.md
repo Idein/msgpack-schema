@@ -22,6 +22,16 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ## [Released]
 
+## 0.1.6 - 2021-06-12
+
+### Added
+
+- Add `msgpack` macro.
+
+### Removed
+
+- Remove `BinarySerializer` and `BinaryDeserializer`. Use `serialize` and `deserialize` instead.
+
 ## 0.1.5 - 2021-06-12
 
 ### Fixed
