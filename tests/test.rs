@@ -354,16 +354,16 @@ fn arb_value() -> impl Strategy<Value = Value> {
 
 proptest! {
     #[test]
-    fn test_binary(v in arb_value()) {
-        let mut buf = vec![];
-        msgpack_schema::serialize(&v, &mut buf).unwrap();
-        assert_eq!(v, msgpack_schema::deserialize(buf.as_slice()).unwrap());
-    }
-
-    #[test]
-    fn test_value(v in arb_value()) {
+    fn roundtrip_value(v in arb_value()) {
         let x = value::serialize(&v);
         assert_eq!(v, x);
         assert_eq!(v, value::deserialize(x).unwrap());
+    }
+
+    #[test]
+    fn roundtrip_binary(v in arb_value()) {
+        let mut buf = vec![];
+        msgpack_schema::serialize(&v, &mut buf).unwrap();
+        assert_eq!(v, msgpack_schema::deserialize(buf.as_slice()).unwrap());
     }
 }
