@@ -877,7 +877,7 @@ impl<T: Deserialize> Deserialize for Vec<T> {
     }
 }
 
-pub struct BinarySerializer<W> {
+struct BinarySerializer<W> {
     w: W,
 }
 
@@ -953,7 +953,7 @@ trait ReadExt: ReadBytesExt {
 
 impl<R: io::Read> ReadExt for R {}
 
-pub struct BinaryDeserializer<R> {
+struct BinaryDeserializer<R> {
     r: R,
 }
 
