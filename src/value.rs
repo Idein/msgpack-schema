@@ -910,22 +910,81 @@ impl crate::Deserialize for Any {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! msgpack_array {
-    ($( $xs: tt, )*) => {
-        $crate::value::Value::Array(vec![ $( $crate::msgpack_value!($xs), )* ])
+    ($acc: ident) => {
     };
-    ($( $xs: tt ),*) => {
-        $crate::value::Value::Array(vec![ $( $crate::msgpack_value!($xs) ),* ])
+    ($acc: ident,) => {
+    };
+    ($acc: ident nil) => {
+        $acc.push($crate::msgpack_value!(nil));
+    };
+    ($acc: ident nil, $( $rest: tt )*) => {
+        $acc.push($crate::msgpack_value!(nil));
+        $crate::msgpack_array!($acc $( $rest )*);
+    };
+    ($acc: ident [ $( $tt: tt )* ]) => {
+        $acc.push($crate::msgpack_value!([ $( $tt )* ]));
+    };
+    ($acc: ident [ $( $tt: tt )* ], $( $rest: tt )*) => {
+        $acc.push($crate::msgpack_value!([ $( $tt )* ]));
+        $crate::msgpack_array!($acc $( $rest )*);
+    };
+    ($acc: ident { $( $tt: tt )* }) => {
+        $acc.push($crate::msgpack_value!({ $( $tt )* }));
+    };
+    ($acc: ident { $( $tt: tt )* }, $( $rest: tt )*) => {
+        $acc.push($crate::msgpack_value!({ $( $tt )* }));
+        $crate::msgpack_array!($acc $( $rest )*);
+    };
+    ($acc: ident $expr: expr) => {
+        $acc.push($crate::msgpack_value!($expr));
+    };
+    ($acc: ident $expr: expr, $( $rest: tt )*) => {
+        $acc.push($crate::msgpack_value!($expr));
+        $crate::msgpack_array!($acc $( $rest )*);
     };
 }
 
 #[doc(hidden)]
-#[macro_export(local_inner_macro)]
+#[macro_export]
 macro_rules! msgpack_map {
-    ($( $xs: tt: $ys: tt, )*) => {
-        $crate::value::Value::Map(::std::vec![ $( ($crate::msgpack_value!($xs), $crate::msgpack_value!($ys)), )* ])
+    (@key $acc: ident []) => {
     };
-    ($( $xs: tt: $ys: tt ),*) => {
-        $crate::value::Value::Map(::std::vec![ $( ($crate::msgpack_value!($xs), $crate::msgpack_value!($ys)), )* ])
+    (@key $acc: ident [],) => {
+    };
+    (@key $acc: ident [ $( $key: tt )* ] : $( $rest: tt )*) => {
+        let key = $crate::msgpack_value!($( $key )*);
+        $crate::msgpack_map!(@val $acc key $( $rest )*);
+    };
+    (@key $acc: ident [ $( $key: tt )* ] $tt: tt $( $rest: tt )*) => {
+        $crate::msgpack_map!(@key $acc [ $( $key )* $tt ] $( $rest )*);
+    };
+    (@val $acc: ident $key: ident nil) => {
+        $acc.push(($key, $crate::msgpack_value!(nil)));
+    };
+    (@val $acc: ident $key: ident nil, $( $rest: tt )*) => {
+        $acc.push(($key, $crate::msgpack_value!(nil)));
+        $crate::msgpack_map!(@key $acc [] $( $rest )*);
+    };
+    (@val $acc: ident $key: ident [ $( $tt: tt )* ]) => {
+        $acc.push(($key, $crate::msgpack_value!([ $( $tt )* ])));
+    };
+    (@val $acc: ident $key: ident [ $( $tt: tt )* ], $( $rest: tt )*) => {
+        $acc.push(($key, $crate::msgpack_value!([ $( $tt )* ])));
+        $crate::msgpack_map!(@key $acc [] $( $rest )*);
+    };
+    (@val $acc: ident $key: ident { $( $tt: tt )* }) => {
+        $acc.push(($key, $crate::msgpack_value!({ $( $tt )* })));
+    };
+    (@val $acc: ident $key: ident { $( $tt: tt )* }, $( $rest: tt )*) => {
+        $acc.push(($key, $crate::msgpack_value!({ $( $tt )* })));
+        $crate::msgpack_map!(@key $acc [] $( $rest )*);
+    };
+    (@val $acc: ident $key: ident $expr: expr) => {
+        $acc.push(($key, $crate::msgpack_value!($expr)));
+    };
+    (@val $acc: ident $key: ident $expr: expr, $( $rest: tt )*) => {
+        $acc.push(($key, $crate::msgpack_value!($expr)));
+        $crate::msgpack_map!(@key $acc [] $( $rest )*);
     };
 }
 
@@ -936,10 +995,20 @@ macro_rules! msgpack_value {
         $crate::value::Value::Nil
     };
     ([ $( $tt: tt )* ]) => {
-        $crate::msgpack_array!($( $tt )*)
+        {
+            #[allow(unused_mut)]
+            let mut array = vec![];
+            $crate::msgpack_array!(array $( $tt )*);
+            $crate::value::Value::Array(array)
+        }
     };
     ({ $( $tt: tt )* }) => {
-        $crate::msgpack_map!($( $tt )*)
+        {
+            #[allow(unused_mut)]
+            let mut map = vec![];
+            $crate::msgpack_map!(@key map [] $( $tt )*);
+            $crate::value::Value::Map(map)
+        }
     };
     ($other: expr) => {
         $crate::value::Value::from($other)
@@ -1011,11 +1080,53 @@ mod tests {
 
         assert_eq!(
             Value::Map(vec![
+                (msgpack_value!(0), msgpack_value!(nil)),
+                (msgpack_value!(1), msgpack_value!(nil)),
+            ]),
+            msgpack_value!({ 0: nil, 1: nil })
+        );
+
+        assert_eq!(
+            Value::Map(vec![
+                (msgpack_value!(0), msgpack_value!({})),
+                (msgpack_value!(1), msgpack_value!({})),
+            ]),
+            msgpack_value!({ 0: {}, 1: {} })
+        );
+
+        assert_eq!(
+            Value::Map(vec![
+                (msgpack_value!(0), msgpack_value!([])),
+                (msgpack_value!(1), msgpack_value!([])),
+            ]),
+            msgpack_value!({ 0: [], 1: [] })
+        );
+
+        assert_eq!(
+            Value::Map(vec![
+                (msgpack_value!(0), msgpack_value!(-1)),
+                (msgpack_value!(-1), msgpack_value!(0)),
+            ]),
+            msgpack_value!({ 0: -1, -1: 0 })
+        );
+
+        assert_eq!(
+            Value::Map(vec![
                 (msgpack_value!(42), msgpack_value!({ true: false })),
                 (msgpack_value!({ nil: 3.14 }), msgpack_value!("hello")),
             ]),
             msgpack_value!({ 42: { true: false }, { nil: 3.14 }: "hello", })
         );
         assert_eq!(Value::Map(vec![]), msgpack_value!({}));
+
+        assert_eq!(
+            Value::Bin(Bin(vec![0xDEu8, 0xAD, 0xBE, 0xEF])),
+            msgpack_value!(Bin(vec![0xDE, 0xAD, 0xBE, 0xEF]))
+        );
+
+        assert_eq!(
+            Value::Array(vec![msgpack_value!(-42)]),
+            msgpack_value!([-42])
+        );
     }
 }
