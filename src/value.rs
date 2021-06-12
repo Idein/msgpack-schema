@@ -383,6 +383,12 @@ impl From<String> for Value {
     }
 }
 
+impl From<&str> for Value {
+    fn from(v: &str) -> Self {
+        v.to_owned().into()
+    }
+}
+
 impl From<Bin> for Value {
     fn from(v: Bin) -> Self {
         Self::Bin(v)
@@ -398,6 +404,12 @@ impl From<Vec<Value>> for Value {
 impl From<Vec<(Value, Value)>> for Value {
     fn from(v: Vec<(Value, Value)>) -> Self {
         Self::Map(v)
+    }
+}
+
+impl From<Nil> for Value {
+    fn from(_: Nil) -> Self {
+        Self::Nil
     }
 }
 
@@ -892,5 +904,115 @@ impl crate::Deserialize for Any {
             }
         }
         Ok(Any)
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! msgpack_array {
+    ($( $xs: tt, )*) => {
+        $crate::value::Value::Array(vec![ $( $crate::msgpack!($xs), )* ])
+    };
+    ($( $xs: tt ),*) => {
+        $crate::value::Value::Array(vec![ $( $crate::msgpack!($xs) ),* ])
+    };
+}
+
+#[doc(hidden)]
+#[macro_export(local_inner_macro)]
+macro_rules! msgpack_map {
+    ($( $xs: tt: $ys: tt, )*) => {
+        $crate::value::Value::Map(::std::vec![ $( ($crate::msgpack!($xs), $crate::msgpack!($ys)), )* ])
+    };
+    ($( $xs: tt: $ys: tt ),*) => {
+        $crate::value::Value::Map(::std::vec![ $( ($crate::msgpack!($xs), $crate::msgpack!($ys)), )* ])
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! msgpack {
+    (nil) => {
+        $crate::value::Value::Nil
+    };
+    ([ $( $tt: tt )* ]) => {
+        $crate::msgpack_array!($( $tt )*)
+    };
+    ({ $( $tt: tt )* }) => {
+        $crate::msgpack_map!($( $tt )*)
+    };
+    ($other: expr) => {
+        $crate::value::Value::from($other)
+    };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn msgpack_macro() {
+        assert_eq!(Value::Int(Int::from(42)), msgpack!(42));
+        assert_eq!(Value::Int(Int::from(-42)), msgpack!(-42));
+        assert_eq!(Value::F64(3.14), msgpack!(3.14));
+        assert_eq!(Value::F32(3.14), msgpack!(3.14f32));
+        assert_eq!(
+            Value::Str(Str("hello world".to_owned().into_bytes())),
+            msgpack!("hello world")
+        );
+        assert_eq!(Value::Bool(true), msgpack!(true));
+        assert_eq!(Value::Bool(false), msgpack!(false));
+        assert_eq!(Value::Nil, msgpack!(Nil));
+        assert_eq!(Value::Int(Int::from(7)), msgpack!(3 + 4));
+
+        assert_eq!(Value::Nil, msgpack!(nil));
+
+        assert_eq!(
+            Value::Array(vec![
+                msgpack!(42),
+                msgpack!(true),
+                msgpack!(nil),
+                msgpack!("hello"),
+            ]),
+            msgpack!([42, true, nil, "hello"])
+        );
+
+        assert_eq!(
+            Value::Array(vec![
+                msgpack!(42),
+                msgpack!(true),
+                msgpack!(nil),
+                msgpack!("hello"),
+            ]),
+            msgpack!([42, true, nil, "hello",])
+        );
+
+        assert_eq!(
+            Value::Array(vec![
+                msgpack!(42),
+                Value::Array(vec![Value::Array(vec![msgpack!(true)]), msgpack!(nil),]),
+                msgpack!("hello"),
+            ]),
+            msgpack!([42, [[true], nil], "hello",])
+        );
+
+        assert_eq!(Value::Array(vec![]), msgpack!([]));
+
+        assert_eq!(
+            Value::Map(vec![
+                (msgpack!(42), msgpack!(true)),
+                (msgpack!(nil), msgpack!("hello")),
+            ]),
+            msgpack!({ 42: true, nil: "hello", })
+        );
+
+        assert_eq!(
+            Value::Map(vec![
+                (msgpack!(42), msgpack!({ true: false })),
+                (msgpack!({ nil: 3.14 }), msgpack!("hello")),
+            ]),
+            msgpack!({ 42: { true: false }, { nil: 3.14 }: "hello", })
+        );
+        assert_eq!(Value::Map(vec![]), msgpack!({}));
     }
 }
