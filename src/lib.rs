@@ -650,6 +650,8 @@ pub enum DeserializeError<E: std::error::Error> {
     MissingField,
     #[error("unknown variant")]
     UnknownVariant,
+    #[error("invalid value")]
+    InvalidValue,
 }
 
 pub trait Deserialize: Sized {
