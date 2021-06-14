@@ -8,19 +8,23 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ### Added
 
-- Add `msgpack` macro.
-
 ### Fixed
 
 ### Removed
-
-- Remove `BinarySerializer` and `BinaryDeserializer`. Use `serialize` and `deserialize` instead.
 
 ### Changed
 
 ---
 
 ## [Released]
+
+## 0.2.0 - 2021-06-15
+
+### Added
+
+### Removed
+
+- Remove `DeserializeError::InvalidValue` to allow the `DeserializeError` type to be `Send` and `Sync`.
 
 ## 0.1.6 - 2021-06-12
 
