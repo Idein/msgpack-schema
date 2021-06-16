@@ -309,14 +309,15 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             let ident = variant.ident.clone();
             let ty = field.ty.clone();
             clauses.push(quote! {
-                if let Ok(x) = ::msgpack_schema::value::deserialize::<#ty>(__value.clone()) {
+                let mut __deserializer2 = __deserializer.clone();
+                if let Ok(x) = <#ty as ::msgpack_schema::Deserialize>::deserialize(&mut __deserializer2) {
+                    *__deserializer = __deserializer2;
                     return Ok(Self::#ident(x));
                 }
             })
         }
 
         quote! {
-            let __value = ::msgpack_schema::value::Value::deserialize(__deserializer)?;
             #( #clauses )*
             Err(::msgpack_schema::ValidationError.into())
         }
