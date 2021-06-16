@@ -944,17 +944,17 @@ trait ReadExt: ReadBytesExt {
 
 impl<R: io::Read> ReadExt for R {}
 
-struct BinaryDeserializer<R> {
-    r: R,
+struct BinaryDeserializer<'a> {
+    r: &'a [u8],
 }
 
-impl<R: io::Read> BinaryDeserializer<R> {
-    pub fn new(r: R) -> Self {
+impl<'a> BinaryDeserializer<'a> {
+    pub fn new(r: &'a [u8]) -> Self {
         Self { r }
     }
 }
 
-impl<R: io::Read> Deserializer for BinaryDeserializer<R> {
+impl<'a> Deserializer for BinaryDeserializer<'a> {
     fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
         let token = match rmp::decode::read_marker(&mut self.r)
             .map_err(|_| InvalidInputError.into())?
