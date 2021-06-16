@@ -636,7 +636,7 @@ impl<'a> Deserializer<'a> {
         Self { r }
     }
 
-    pub fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
+    pub fn deserialize_token(&mut self) -> Result<Token, InvalidInputError> {
         let token = match rmp::decode::read_marker(&mut self.r)
             .map_err(|_| InvalidInputError.into())?
         {
@@ -901,7 +901,7 @@ pub trait Deserialize: Sized {
 impl Deserialize for bool {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let v = deserializer
-            .deserialize()?
+            .deserialize_token()?
             .to_bool()
             .ok_or(ValidationError)?;
         Ok(v)
@@ -911,7 +911,7 @@ impl Deserialize for bool {
 impl Deserialize for Int {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let v = deserializer
-            .deserialize()?
+            .deserialize_token()?
             .to_int()
             .ok_or(ValidationError)?;
         Ok(v)
@@ -985,7 +985,7 @@ impl Deserialize for i64 {
 impl Deserialize for f32 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         deserializer
-            .deserialize()?
+            .deserialize_token()?
             .to_f32()
             .ok_or(ValidationError.into())
     }
@@ -994,7 +994,7 @@ impl Deserialize for f32 {
 impl Deserialize for f64 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         deserializer
-            .deserialize()?
+            .deserialize_token()?
             .to_f64()
             .ok_or(ValidationError.into())
     }
@@ -1003,7 +1003,7 @@ impl Deserialize for f64 {
 impl Deserialize for Str {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let buf = deserializer
-            .deserialize()?
+            .deserialize_token()?
             .to_str()
             .ok_or(ValidationError)?;
         Ok(buf)
@@ -1031,7 +1031,7 @@ impl<T: Deserialize> Deserialize for Option<T> {
 impl<T: Deserialize> Deserialize for Vec<T> {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let len = deserializer
-            .deserialize()?
+            .deserialize_token()?
             .to_array()
             .ok_or(ValidationError)?;
         let mut vec = Vec::with_capacity(len as usize);
@@ -1120,7 +1120,7 @@ mod tests {
     impl Deserialize for Human {
         fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
             let len = deserializer
-                .deserialize()?
+                .deserialize_token()?
                 .to_map()
                 .ok_or(ValidationError)?;
 

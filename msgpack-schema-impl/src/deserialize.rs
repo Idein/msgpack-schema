@@ -114,7 +114,7 @@ fn derive_c_struct(
 
         quote! {
             let __len = __deserializer
-                .deserialize()?
+                .deserialize_token()?
                 .to_map()
                 .ok_or(::msgpack_schema::ValidationError)?;
 
@@ -230,7 +230,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
         }
 
         quote! {
-            let (__tag, __is_array): (u32, bool) = match __deserializer.deserialize()? {
+            let (__tag, __is_array): (u32, bool) = match __deserializer.deserialize_token()? {
                 ::msgpack_schema::Token::Int(v) => {
                     (<u32 as ::std::convert::TryFrom<_>>::try_from(v).map_err(|_| ::msgpack_schema::ValidationError)?, false)
                 }

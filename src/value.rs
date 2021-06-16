@@ -644,7 +644,7 @@ impl Serialize for Value {
 
 impl Deserialize for Value {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let x = match deserializer.deserialize()? {
+        let x = match deserializer.deserialize_token()? {
             Token::Nil => Value::Nil,
             Token::Bool(v) => v.into(),
             Token::Int(v) => v.into(),
@@ -702,7 +702,7 @@ impl Serialize for Nil {
 
 impl Deserialize for Nil {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let token = deserializer.deserialize()?;
+        let token = deserializer.deserialize_token()?;
         if token != Token::Nil {
             return Err(ValidationError.into());
         }
@@ -719,7 +719,7 @@ impl Deserialize for Any {
         let mut count = 1;
         while count > 0 {
             count -= 1;
-            match deserializer.deserialize()? {
+            match deserializer.deserialize_token()? {
                 Token::Nil
                 | Token::Bool(_)
                 | Token::Int(_)
