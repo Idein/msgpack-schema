@@ -871,6 +871,15 @@ impl<'a> Deserializer<'a> {
         };
         Ok(token)
     }
+
+    pub fn deserialize<D: Deserialize>(&mut self) -> Result<D, DeserializeError> {
+        D::deserialize(self)
+    }
+
+    #[doc(hidden)]
+    pub fn try_deserialize<D: Deserialize>(&mut self) -> Result<Option<D>, InvalidInputError> {
+        D::try_deserialize(self)
+    }
 }
 
 #[derive(Debug, Error)]
@@ -891,7 +900,7 @@ pub trait Deserialize: Sized {
     #[doc(hidden)]
     fn try_deserialize(deserializer: &mut Deserializer) -> Result<Option<Self>, InvalidInputError> {
         let mut deserializer2 = deserializer.clone();
-        match Self::deserialize(&mut deserializer2) {
+        match deserializer2.deserialize() {
             Ok(v) => {
                 *deserializer = deserializer2;
                 Ok(Some(v))
@@ -924,7 +933,8 @@ impl Deserialize for Int {
 
 impl Deserialize for u8 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -932,7 +942,8 @@ impl Deserialize for u8 {
 
 impl Deserialize for u16 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -940,7 +951,8 @@ impl Deserialize for u16 {
 
 impl Deserialize for u32 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -948,7 +960,8 @@ impl Deserialize for u32 {
 
 impl Deserialize for u64 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -956,7 +969,8 @@ impl Deserialize for u64 {
 
 impl Deserialize for i8 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -964,7 +978,8 @@ impl Deserialize for i8 {
 
 impl Deserialize for i16 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -972,7 +987,8 @@ impl Deserialize for i16 {
 
 impl Deserialize for i32 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -980,7 +996,8 @@ impl Deserialize for i32 {
 
 impl Deserialize for i64 {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
+        deserializer
+            .deserialize::<Int>()?
             .try_into()
             .map_err(|_| ValidationError.into())
     }
@@ -1016,7 +1033,7 @@ impl Deserialize for Str {
 
 impl Deserialize for String {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let Str(data) = Deserialize::deserialize(deserializer)?;
+        let Str(data) = deserializer.deserialize()?;
         let v = String::from_utf8(data).map_err(|_| ValidationError)?;
         Ok(v)
     }
@@ -1024,10 +1041,10 @@ impl Deserialize for String {
 
 impl<T: Deserialize> Deserialize for Option<T> {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        if let Some(_) = Nil::try_deserialize(deserializer)? {
+        if let Some(_) = deserializer.try_deserialize::<Nil>()? {
             return Ok(None);
         }
-        let v = T::deserialize(deserializer)?;
+        let v = deserializer.deserialize()?;
         Ok(Some(v))
     }
 }
@@ -1040,7 +1057,7 @@ impl<T: Deserialize> Deserialize for Vec<T> {
             .ok_or(ValidationError)?;
         let mut vec = Vec::with_capacity(len as usize);
         for _ in 0..len {
-            vec.push(T::deserialize(deserializer)?);
+            vec.push(deserializer.deserialize()?);
         }
         Ok(vec.into())
     }
@@ -1049,14 +1066,14 @@ impl<T: Deserialize> Deserialize for Vec<T> {
 /// Write out a MessagePack object.
 pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
     let mut serializer = Serializer::new();
-    s.serialize(&mut serializer);
+    serializer.serialize(s);
     serializer.into_inner()
 }
 
 /// Read out a MessagePack object.
 pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
     let mut deserializer = Deserializer::new(r);
-    D::deserialize(&mut deserializer)
+    deserializer.deserialize()
 }
 
 /// Constructs a MessagePack object.
@@ -1131,22 +1148,22 @@ mod tests {
             let mut age: Option<u32> = None;
             let mut name: Option<String> = None;
             for _ in 0..len {
-                let tag = u32::deserialize(deserializer)?;
+                let tag: u32 = deserializer.deserialize()?;
                 match tag {
                     0 => {
                         if age.is_some() {
                             return Err(InvalidInputError.into());
                         }
-                        age = Some(Deserialize::deserialize(deserializer)?);
+                        age = Some(deserializer.deserialize()?);
                     }
                     1 => {
                         if name.is_some() {
                             return Err(InvalidInputError.into());
                         }
-                        name = Some(Deserialize::deserialize(deserializer)?);
+                        name = Some(deserializer.deserialize()?);
                     }
                     _ => {
-                        let value::Any = Deserialize::deserialize(deserializer)?;
+                        let value::Any = deserializer.deserialize()?;
                     }
                 }
             }

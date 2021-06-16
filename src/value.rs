@@ -653,19 +653,16 @@ impl Deserialize for Value {
             Token::Str(v) => v.into(),
             Token::Bin(v) => v.into(),
             Token::Array(len) => {
-                let mut vec = vec![];
+                let mut vec: Vec<Value> = vec![];
                 for _ in 0..len {
-                    vec.push(Value::deserialize(deserializer)?);
+                    vec.push(deserializer.deserialize()?);
                 }
                 vec.into()
             }
             Token::Map(len) => {
-                let mut map = vec![];
+                let mut map: Vec<(Value, Value)> = vec![];
                 for _ in 0..len {
-                    map.push((
-                        Value::deserialize(deserializer)?,
-                        Value::deserialize(deserializer)?,
-                    ));
+                    map.push((deserializer.deserialize()?, deserializer.deserialize()?));
                 }
                 map.into()
             }

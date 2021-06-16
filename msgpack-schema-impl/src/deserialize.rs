@@ -93,7 +93,7 @@ fn derive_c_struct(
                     if #ident.is_some() {
                         return Err(::msgpack_schema::InvalidInputError.into());
                     }
-                    #ident = Some(::msgpack_schema::Deserialize::deserialize(__deserializer)?);
+                    #ident = Some(__deserializer.deserialize()?);
                 }
             });
         }
@@ -120,11 +120,11 @@ fn derive_c_struct(
 
             #( #init )*
             for _ in 0..__len {
-                let __tag: u32 = ::msgpack_schema::Deserialize::deserialize(__deserializer)?;
+                let __tag: u32 = __deserializer.deserialize()?;
                 match __tag {
                     #( #filters )*
                     _ => {
-                        let ::msgpack_schema::value::Any = ::msgpack_schema::Deserialize::deserialize(__deserializer)?;
+                        let ::msgpack_schema::value::Any = __deserializer.deserialize()?;
                     }
                 }
             }
@@ -156,7 +156,7 @@ fn derive_newtype_struct(
     let deserialize_trait = spanned_deserialize_trait(node);
 
     let fn_body = quote! {
-        ::msgpack_schema::Deserialize::deserialize(__deserializer).map(Self)
+        __deserializer.deserialize().map(Self)
     };
 
     let gen = quote! {
@@ -207,7 +207,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                                     if !__is_array {
                                         return Err(::msgpack_schema::ValidationError.into());
                                     }
-                                    Ok(Self::#ident(Deserialize::deserialize(__deserializer)?))
+                                    Ok(Self::#ident(__deserializer.deserialize()?))
                                 }
                             });
                         }
@@ -238,7 +238,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                     if len != 2 {
                         return Err(::msgpack_schema::ValidationError.into());
                     }
-                    (u32::deserialize(__deserializer)?, true)
+                    (__deserializer.deserialize::<u32>()?, true)
                 }
                 _ => {
                     return Err(::msgpack_schema::ValidationError.into());
@@ -309,7 +309,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             let ident = variant.ident.clone();
             let ty = field.ty.clone();
             clauses.push(quote! {
-                if let Some(x) = <#ty as ::msgpack_schema::Deserialize>::try_deserialize(__deserializer)? {
+                if let Some(x) = __deserializer.try_deserialize::<#ty>()? {
                     return Ok(Self::#ident(x));
                 }
             })
