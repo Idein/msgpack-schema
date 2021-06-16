@@ -885,13 +885,13 @@ impl format::Serializer for BinarySerializer {
 }
 
 /// Write out a MessagePack object.
-pub fn serialize<S: Serialize>(s: S) -> io::Result<Vec<u8>> {
+pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
     let mut serializer = Serializer {
         inner: crate::S::B(BinarySerializer::new()),
     };
     s.serialize(&mut serializer);
     match serializer.inner {
-        crate::S::B(s) => Ok(s.into_inner()),
+        crate::S::B(s) => s.into_inner(),
         crate::S::V(_) => unreachable!(),
     }
 }
@@ -1266,12 +1266,12 @@ mod tests {
             age: 42,
             name: "John".into(),
         };
-        let buf1 = serialize(&val).unwrap();
+        let buf1 = serialize(&val);
         let lit = msgpack!({
             0: 42,
             1: "John",
         });
-        let buf2 = serialize(&lit).unwrap();
+        let buf2 = serialize(&lit);
         assert_eq!(buf1, buf2);
     }
 }
