@@ -90,14 +90,14 @@ fn derive_c_struct(
             let push = if *opt {
                 quote! {
                     if let Some(value) = &self.#ident {
-                        (#tag as u32).serialize(serializer);
-                        value.serialize(serializer);
+                        serializer.serialize(#tag as u32);
+                        serializer.serialize(value);
                     }
                 }
             } else {
                 quote! {
-                    (#tag as u32).serialize(serializer);
-                    self.#ident.serialize(serializer);
+                    serializer.serialize(#tag as u32);
+                    serializer.serialize(&self.#ident);
                 }
             };
             pushes.push(push);
@@ -133,7 +133,7 @@ fn derive_newtype_struct(
     let serialize_trait = spanned_serialize_trait(node);
 
     let fn_body = quote! {
-        self.0.serialize(serializer)
+        serializer.serialize(&self.0);
     };
 
     let gen = quote! {
@@ -171,7 +171,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                         0 => {
                             clauses.push(quote! {
                                 Self::#ident() => {
-                                    (#tag as u32).serialize(serializer)
+                                    serializer.serialize(#tag as u32);
                                 }
                             });
                         }
@@ -179,8 +179,8 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             clauses.push(quote! {
                                 Self::#ident(value) => {
                                     serializer.serialize_array(2);
-                                    (#tag as u32).serialize(serializer);
-                                    value.serialize(serializer)
+                                    serializer.serialize(#tag as u32);
+                                    serializer.serialize(value);
                                 }
                             });
                         }
@@ -195,7 +195,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                 Fields::Unit => {
                     clauses.push(quote! {
                         Self::#ident => {
-                            (#tag as u32).serialize(serializer)
+                            serializer.serialize(#tag as u32);
                         }
                     });
                 }
@@ -267,7 +267,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             let ident = variant.ident.clone();
             clauses.push(quote! {
                 Self::#ident(value) => {
-                    value.serialize(serializer)
+                    serializer.serialize(value)
                 }
             });
         }

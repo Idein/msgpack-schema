@@ -627,14 +627,14 @@ impl Serialize for Value {
             Value::Array(v) => {
                 serializer.serialize_array(v.len() as u32);
                 for x in v {
-                    x.serialize(serializer);
+                    serializer.serialize(x);
                 }
             }
             Value::Map(v) => {
                 serializer.serialize_map(v.len() as u32);
                 for (k, v) in v {
-                    k.serialize(serializer);
-                    v.serialize(serializer);
+                    serializer.serialize(k);
+                    serializer.serialize(v);
                 }
             }
             Value::Ext(v) => serializer.serialize_ext(v.r#type, &v.data),

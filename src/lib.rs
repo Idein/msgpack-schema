@@ -402,6 +402,10 @@ impl Serializer {
         rmp::encode::write_ext_meta(&mut self.w, data.len() as u32, tag).unwrap();
         self.w.write_all(data).unwrap();
     }
+
+    pub fn serialize<S: Serialize>(&mut self, s: S) {
+        S::serialize(&s, self)
+    }
 }
 
 pub trait Serialize {
@@ -507,7 +511,7 @@ impl Serialize for String {
 impl<T: Serialize> Serialize for Option<T> {
     fn serialize(&self, serializer: &mut Serializer) {
         match self {
-            Some(v) => v.serialize(serializer),
+            Some(v) => serializer.serialize(v),
             None => serializer.serialize_nil(),
         }
     }
@@ -517,7 +521,7 @@ impl<T: Serialize> Serialize for [T] {
     fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_array(self.len() as u32);
         for x in self {
-            x.serialize(serializer);
+            serializer.serialize(x);
         }
     }
 }
@@ -526,7 +530,7 @@ impl<T: Serialize> Serialize for Vec<T> {
     fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_array(self.len() as u32);
         for x in self {
-            x.serialize(serializer);
+            serializer.serialize(x);
         }
     }
 }
@@ -1110,10 +1114,10 @@ mod tests {
     impl Serialize for Human {
         fn serialize(&self, serializer: &mut Serializer) {
             serializer.serialize_map(2);
-            0u32.serialize(serializer);
-            self.age.serialize(serializer);
-            1u32.serialize(serializer);
-            self.name.serialize(serializer);
+            serializer.serialize(0u32);
+            serializer.serialize(self.age);
+            serializer.serialize(1u32);
+            serializer.serialize(&self.name);
         }
     }
 
