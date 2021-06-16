@@ -352,7 +352,7 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::{self, Write};
 use thiserror::Error;
-use value::{Bin, Ext, Int, Str};
+use value::{Bin, Ext, Int, Nil, Str};
 
 pub struct Serializer {
     w: Vec<u8>,
@@ -883,6 +883,19 @@ pub enum DeserializeError {
 
 pub trait Deserialize: Sized {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError>;
+
+    #[doc(hidden)]
+    fn try_deserialize(deserializer: &mut Deserializer) -> Result<Option<Self>, InvalidInputError> {
+        let mut deserializer2 = deserializer.clone();
+        match Self::deserialize(&mut deserializer2) {
+            Ok(v) => {
+                *deserializer = deserializer2;
+                Ok(Some(v))
+            }
+            Err(DeserializeError::Validation(_)) => Ok(None),
+            Err(DeserializeError::InvalidInput(err)) => Err(err.into()),
+        }
+    }
 }
 
 impl Deserialize for bool {
@@ -1007,10 +1020,7 @@ impl Deserialize for String {
 
 impl<T: Deserialize> Deserialize for Option<T> {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let mut d = deserializer.clone();
-        let token: Token = d.deserialize()?;
-        if token == Token::Nil {
-            *deserializer = d;
+        if let Some(_) = Nil::try_deserialize(deserializer)? {
             return Ok(None);
         }
         let v = T::deserialize(deserializer)?;
