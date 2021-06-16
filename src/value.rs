@@ -602,7 +602,7 @@ impl Value {
     }
 }
 
-struct Serializer {
+pub(crate) struct Serializer {
     stack: Vec<(usize, Value)>,
 }
 
@@ -656,7 +656,7 @@ impl Serializer {
     }
 }
 
-impl crate::Serializer for Serializer {
+impl crate::format::Serializer for Serializer {
     fn serialize_nil(&mut self) {
         self.push_atom(Value::Nil);
     }
@@ -703,16 +703,18 @@ impl crate::Serializer for Serializer {
 
 #[doc(hidden)]
 pub fn serialize<S: crate::Serialize>(x: &S) -> Value {
-    let mut serializer = Serializer::new();
+    let mut serializer = crate::Serializer {
+        inner: crate::S::V(Serializer::new()),
+    };
     x.serialize(&mut serializer);
-    serializer.finish()
+    match serializer.inner {
+        crate::S::V(s) => s.finish(),
+        crate::S::B(_) => unreachable!(),
+    }
 }
 
 impl crate::Serialize for Value {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: crate::Serializer,
-    {
+    fn serialize(&self, serializer: &mut crate::Serializer) {
         match self {
             Value::Nil => serializer.serialize_nil(),
             Value::Bool(v) => serializer.serialize_bool(*v),
@@ -847,10 +849,7 @@ impl crate::Deserialize for Value {
 pub struct Nil;
 
 impl crate::Serialize for Nil {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: crate::Serializer,
-    {
+    fn serialize(&self, serializer: &mut crate::Serializer) {
         serializer.serialize_nil()
     }
 }

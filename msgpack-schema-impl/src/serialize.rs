@@ -114,10 +114,7 @@ fn derive_c_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S)
-            where
-                S: ::msgpack_schema::Serializer
-            {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -142,10 +139,7 @@ fn derive_newtype_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S)
-            where
-                S: ::msgpack_schema::Serializer
-            {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -218,10 +212,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S)
-            where
-                S: ::msgpack_schema::Serializer
-            {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -291,10 +282,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S)
-            where
-                S: ::msgpack_schema::Serializer
-            {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }

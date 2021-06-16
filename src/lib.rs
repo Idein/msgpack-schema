@@ -355,174 +355,190 @@ use std::io::{self, Write};
 use thiserror::Error;
 use value::{Bin, Int, Str};
 
-pub trait Serializer {
-    fn serialize_nil(&mut self);
-    fn serialize_bool(&mut self, v: bool);
-    fn serialize_int(&mut self, v: Int);
-    fn serialize_f32(&mut self, v: f32);
-    fn serialize_f64(&mut self, v: f64);
-    fn serialize_str(&mut self, v: &[u8]);
-    fn serialize_bin(&mut self, v: &[u8]);
-    fn serialize_array(&mut self, len: u32);
-    fn serialize_map(&mut self, len: u32);
-    fn serialize_ext(&mut self, tag: i8, v: &[u8]);
+enum S {
+    B(BinarySerializer),
+    V(value::Serializer),
+}
+
+pub struct Serializer {
+    inner: S,
+}
+
+impl Serializer {
+    pub fn serialize_nil(&mut self) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_nil(),
+            S::V(s) => s.serialize_nil(),
+        }
+    }
+    pub fn serialize_bool(&mut self, v: bool) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_bool(v),
+            S::V(s) => s.serialize_bool(v),
+        }
+    }
+    pub fn serialize_int(&mut self, v: Int) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_int(v),
+            S::V(s) => s.serialize_int(v),
+        }
+    }
+    pub fn serialize_f32(&mut self, v: f32) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_f32(v),
+            S::V(s) => s.serialize_f32(v),
+        }
+    }
+    pub fn serialize_f64(&mut self, v: f64) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_f64(v),
+            S::V(s) => s.serialize_f64(v),
+        }
+    }
+    pub fn serialize_str(&mut self, v: &[u8]) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_str(v),
+            S::V(s) => s.serialize_str(v),
+        }
+    }
+    pub fn serialize_bin(&mut self, v: &[u8]) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_bin(v),
+            S::V(s) => s.serialize_bin(v),
+        }
+    }
+    pub fn serialize_array(&mut self, len: u32) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_array(len),
+            S::V(s) => s.serialize_array(len),
+        }
+    }
+    pub fn serialize_map(&mut self, len: u32) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_map(len),
+            S::V(s) => s.serialize_map(len),
+        }
+    }
+    pub fn serialize_ext(&mut self, tag: i8, v: &[u8]) {
+        use format::Serializer;
+        match &mut self.inner {
+            S::B(s) => s.serialize_ext(tag, v),
+            S::V(s) => s.serialize_ext(tag, v),
+        }
+    }
 }
 
 pub trait Serialize {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer;
+    fn serialize(&self, serializer: &mut Serializer);
 }
 
 impl<T: Serialize> Serialize for &T {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         T::serialize(*self, serializer)
     }
 }
 
 impl Serialize for bool {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_bool(*self)
     }
 }
 
 impl Serialize for Int {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(*self)
     }
 }
 
 impl Serialize for u8 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for u16 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for u32 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for u64 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for i8 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for i16 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for i32 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for i64 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_int(Int::from(*self))
     }
 }
 
 impl Serialize for f32 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_f32(*self)
     }
 }
 
 impl Serialize for f64 {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_f64(*self)
     }
 }
 
 impl Serialize for Str {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_str(&self.0)
     }
 }
 
 impl Serialize for str {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_str(self.as_bytes())
     }
 }
 
 impl Serialize for String {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_str(self.as_bytes())
     }
 }
 
 impl<T: Serialize> Serialize for Option<T> {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         match self {
             Some(v) => v.serialize(serializer),
             None => serializer.serialize_nil(),
@@ -531,10 +547,7 @@ impl<T: Serialize> Serialize for Option<T> {
 }
 
 impl<T: Serialize> Serialize for [T] {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_array(self.len() as u32);
         for x in self {
             x.serialize(serializer);
@@ -543,10 +556,7 @@ impl<T: Serialize> Serialize for [T] {
 }
 
 impl<T: Serialize> Serialize for Vec<T> {
-    fn serialize<S>(&self, serializer: &mut S)
-    where
-        S: Serializer,
-    {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_array(self.len() as u32);
         for x in self {
             x.serialize(serializer);
@@ -835,7 +845,7 @@ impl BinarySerializer {
     }
 }
 
-impl Serializer for BinarySerializer {
+impl format::Serializer for BinarySerializer {
     fn serialize_nil(&mut self) {
         rmp::encode::write_nil(&mut self.w).unwrap()
     }
@@ -876,9 +886,14 @@ impl Serializer for BinarySerializer {
 
 /// Write out a MessagePack object.
 pub fn serialize<S: Serialize>(s: S) -> io::Result<Vec<u8>> {
-    let mut serializer = BinarySerializer::new();
+    let mut serializer = Serializer {
+        inner: crate::S::B(BinarySerializer::new()),
+    };
     s.serialize(&mut serializer);
-    Ok(serializer.into_inner())
+    match serializer.inner {
+        crate::S::B(s) => Ok(s.into_inner()),
+        crate::S::V(_) => unreachable!(),
+    }
 }
 
 trait ReadExt: ReadBytesExt {
@@ -1190,10 +1205,7 @@ mod tests {
     }
 
     impl Serialize for Human {
-        fn serialize<S>(&self, serializer: &mut S)
-        where
-            S: Serializer,
-        {
+        fn serialize(&self, serializer: &mut Serializer) {
             serializer.serialize_map(2);
             0u32.serialize(serializer);
             self.age.serialize(serializer);

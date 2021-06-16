@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 - Change the types of `serialize` and `deserialize`.
 - `Serialize` never throws an error.
 - `DeserializeError` no longer contains detailed information.
-- `Deserializer` is now a struct.
+- `Deserializer` and `Serializer` are now structs.
 
 ---
 
