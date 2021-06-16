@@ -271,6 +271,12 @@ impl Bin {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ext {
+    pub r#type: i8,
+    pub data: Vec<u8>,
+}
+
 #[doc(hidden)]
 #[derive(Clone, PartialEq, Debug)]
 pub enum Value {
@@ -283,7 +289,7 @@ pub enum Value {
     Bin(Bin),
     Array(Vec<Value>),
     Map(Vec<(Value, Value)>),
-    Ext(i8, Vec<u8>),
+    Ext(Ext),
 }
 
 impl From<bool> for Value {
@@ -391,6 +397,12 @@ impl From<&str> for Value {
 impl From<Bin> for Value {
     fn from(v: Bin) -> Self {
         Self::Bin(v)
+    }
+}
+
+impl From<Ext> for Value {
+    fn from(v: Ext) -> Self {
+        Self::Ext(v)
     }
 }
 
@@ -512,7 +524,7 @@ impl Value {
         matches!(self, Self::Map(_))
     }
     pub fn is_ext(&self) -> bool {
-        matches!(self, Self::Ext(_, _))
+        matches!(self, Self::Ext(_))
     }
     pub fn as_bool(&self) -> Option<bool> {
         match self {
@@ -586,15 +598,15 @@ impl Value {
             _ => None,
         }
     }
-    pub fn as_ext(&self) -> Option<(i8, &[u8])> {
+    pub fn as_ext(&self) -> Option<&Ext> {
         match self {
-            Self::Ext(tag, v) => Some((*tag, v)),
+            Self::Ext(v) => Some(v),
             _ => None,
         }
     }
-    pub fn as_ext_mut(&mut self) -> Option<(i8, &mut Vec<u8>)> {
+    pub fn as_ext_mut(&mut self) -> Option<&mut Ext> {
         match self {
-            Self::Ext(tag, v) => Some((*tag, v)),
+            Self::Ext(v) => Some(v),
             _ => None,
         }
     }
@@ -629,7 +641,7 @@ impl crate::Serialize for Value {
                     v.serialize(serializer);
                 }
             }
-            Value::Ext(tag, data) => serializer.serialize_ext(*tag, data),
+            Value::Ext(v) => serializer.serialize_ext(v.r#type, &v.data),
         }
     }
 }
@@ -669,7 +681,7 @@ impl crate::Deserialize for Value {
                 }
                 map.into()
             }
-            Token::Ext(tag, data) => Value::Ext(tag, data),
+            Token::Ext(v) => v.into(),
         };
         Ok(x)
     }
@@ -719,7 +731,7 @@ impl crate::Deserialize for Any {
                 | Token::F64(_)
                 | Token::Str(_)
                 | Token::Bin(_)
-                | Token::Ext(_, _) => {}
+                | Token::Ext(_) => {}
                 Token::Array(len) => {
                     count += len;
                 }

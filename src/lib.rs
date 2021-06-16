@@ -352,7 +352,7 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::{self, Write};
 use thiserror::Error;
-use value::{Bin, Int, Str};
+use value::{Bin, Ext, Int, Str};
 
 pub struct Serializer {
     w: Vec<u8>,
@@ -542,7 +542,7 @@ pub enum Token {
     Bin(Bin),
     Array(u32),
     Map(u32),
-    Ext(i8, Vec<u8>),
+    Ext(Ext),
 }
 
 impl Token {
@@ -603,9 +603,9 @@ impl Token {
         }
     }
     #[doc(hidden)]
-    pub fn to_ext(self) -> Option<(i8, Vec<u8>)> {
+    pub fn to_ext(self) -> Option<Ext> {
         match self {
-            Token::Ext(tag, data) => Some((tag, data)),
+            Token::Ext(v) => Some(v),
             _ => None,
         }
     }
@@ -776,58 +776,64 @@ impl<'a> Deserializer<'a> {
             ),
             rmp::Marker::FixExt1 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(1)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::FixExt2 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(2)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::FixExt4 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(4)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::FixExt8 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(8)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::FixExt16 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(16)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::Ext8 => {
                 let len = self.r.read_u8().map_err(|_| InvalidInputError.into())? as usize;
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(len)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::Ext16 => {
                 let len = self
@@ -835,12 +841,13 @@ impl<'a> Deserializer<'a> {
                     .read_u16::<BigEndian>()
                     .map_err(|_| InvalidInputError.into())? as usize;
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(len)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::Ext32 => {
                 let len = self
@@ -848,12 +855,13 @@ impl<'a> Deserializer<'a> {
                     .read_u32::<BigEndian>()
                     .map_err(|_| InvalidInputError.into())? as usize;
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
-                Token::Ext(
-                    tag,
-                    self.r
+                Token::Ext(Ext {
+                    r#type: tag,
+                    data: self
+                        .r
                         .read_to_vec(len)
                         .map_err(|_| InvalidInputError.into())?,
-                )
+                })
             }
             rmp::Marker::Reserved => return Err(InvalidInputError.into()),
         };

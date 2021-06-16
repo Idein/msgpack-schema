@@ -1,5 +1,5 @@
 use msgpack_schema::{
-    value::{Bin, Value},
+    value::{Bin, Ext, Value},
     *,
 };
 use proptest::prelude::*;
@@ -336,7 +336,10 @@ fn arb_value() -> impl Strategy<Value = Value> {
         any::<f64>().prop_map(|v| v.into()),
         ".*".prop_map(|v| v.into()),
         ".*".prop_map(|v| Bin(v.into_bytes()).into()),
-        any::<i8>().prop_flat_map(|tag| ".*".prop_map(move |v| Value::Ext(tag, v.into_bytes()))),
+        any::<i8>().prop_flat_map(|tag| ".*".prop_map(move |v| Value::Ext(Ext {
+            r#type: tag,
+            data: v.into_bytes()
+        }))),
     ];
     leaf.prop_recursive(
         4,   // 4 levels deep
