@@ -362,8 +362,7 @@ proptest! {
 
     #[test]
     fn roundtrip_binary(v in arb_value()) {
-        let mut buf = vec![];
-        msgpack_schema::serialize(&v, &mut buf).unwrap();
+        let buf = msgpack_schema::serialize(&v).unwrap();
         assert_eq!(v, msgpack_schema::deserialize(buf.as_slice()).unwrap());
     }
 }

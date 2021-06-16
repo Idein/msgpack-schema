@@ -936,10 +936,11 @@ impl<W: io::Write> Serializer for BinarySerializer<W> {
 }
 
 /// Write out a MessagePack object.
-pub fn serialize<S: Serialize, W: io::Write>(s: S, w: W) -> io::Result<()> {
-    let mut serializer = BinarySerializer::new(w);
+pub fn serialize<S: Serialize>(s: S) -> io::Result<Vec<u8>> {
+    let mut buf = vec![];
+    let mut serializer = BinarySerializer::new(&mut buf);
     s.serialize(&mut serializer)?;
-    Ok(())
+    Ok(buf)
 }
 
 trait ReadExt: ReadBytesExt {
@@ -1061,7 +1062,7 @@ impl<R: io::Read> Deserializer for BinaryDeserializer<R> {
 }
 
 /// Read out a MessagePack object.
-pub fn deserialize<D: Deserialize, R: io::Read>(r: R) -> Result<D, DeserializeError<io::Error>> {
+pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError<io::Error>> {
     let mut deserializer = BinaryDeserializer::new(r);
     Ok(D::deserialize(&mut deserializer)?)
 }
@@ -1187,14 +1188,12 @@ mod tests {
             age: 42,
             name: "John".into(),
         };
-        let mut buf1 = vec![];
-        serialize(&val, &mut buf1).unwrap();
+        let buf1 = serialize(&val).unwrap();
         let lit = msgpack!({
             0: 42,
             1: "John",
         });
-        let mut buf2 = vec![];
-        serialize(&lit, &mut buf2).unwrap();
+        let buf2 = serialize(&lit).unwrap();
         assert_eq!(buf1, buf2);
     }
 }
