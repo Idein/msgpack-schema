@@ -703,14 +703,8 @@ impl crate::format::Serializer for Serializer {
 
 #[doc(hidden)]
 pub fn serialize<S: crate::Serialize>(x: &S) -> Value {
-    let mut serializer = crate::Serializer {
-        inner: crate::S::V(Serializer::new()),
-    };
-    x.serialize(&mut serializer);
-    match serializer.inner {
-        crate::S::V(s) => s.finish(),
-        crate::S::B(_) => unreachable!(),
-    }
+    let buf = crate::serialize(x);
+    crate::deserialize(&buf).unwrap()
 }
 
 impl crate::Serialize for Value {
@@ -800,10 +794,8 @@ impl crate::format::Deserializer for Deserializer {
 
 #[doc(hidden)]
 pub fn deserialize<D: crate::Deserialize>(value: Value) -> Result<D, crate::DeserializeError> {
-    let mut deserializer = crate::Deserializer {
-        inner: crate::D::V(Deserializer::new(value)),
-    };
-    D::deserialize(&mut deserializer)
+    let buf = crate::serialize(value);
+    crate::deserialize::<D>(&buf)
 }
 
 impl crate::Deserialize for Value {
