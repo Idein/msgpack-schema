@@ -1100,6 +1100,7 @@ pub fn deserialize<D: Deserialize, R: io::Read>(r: R) -> Result<D, DeserializeEr
 /// )
 /// # ;
 /// ```
+#[doc(hidden)]
 #[macro_export]
 macro_rules! msgpack {
     ( $( $tt: tt )+ ) => {
