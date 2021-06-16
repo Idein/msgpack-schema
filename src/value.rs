@@ -1,4 +1,5 @@
 use crate::Token;
+use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
 use std::iter;
 use thiserror::Error;
@@ -739,38 +740,47 @@ impl crate::Serialize for Value {
 }
 
 impl Value {
-    fn into_iter(self) -> Box<dyn Iterator<Item = Token>> {
-        match self {
-            Value::Nil => Box::new(iter::once(Token::Nil)),
-            Value::Bool(v) => Box::new(iter::once(Token::Bool(v))),
-            Value::Int(v) => Box::new(iter::once(Token::Int(v))),
-            Value::F32(v) => Box::new(iter::once(Token::F32(v))),
-            Value::F64(v) => Box::new(iter::once(Token::F64(v))),
-            Value::Str(v) => Box::new(iter::once(Token::Str(v))),
-            Value::Bin(v) => Box::new(iter::once(Token::Bin(v))),
-            Value::Array(v) => Box::new(
-                iter::once(Token::Array(v.len() as u32))
-                    .chain(v.into_iter().flat_map(Value::into_iter)),
-            ),
-            Value::Map(v) => Box::new(
-                iter::once(Token::Map(v.len() as u32)).chain(
-                    v.into_iter()
-                        .flat_map(|(k, v)| k.into_iter().chain(v.into_iter())),
-                ),
-            ),
-            Value::Ext(tag, data) => Box::new(iter::once(Token::Ext(tag, data))),
+    fn into_tokens(self) -> VecDeque<Token> {
+        let mut tokens = VecDeque::new();
+        let mut stack = vec![];
+        stack.push(self);
+        while let Some(v) = stack.pop() {
+            match v {
+                Value::Nil => tokens.push_back(Token::Nil),
+                Value::Bool(v) => tokens.push_back(Token::Bool(v)),
+                Value::Int(v) => tokens.push_back(Token::Int(v)),
+                Value::F32(v) => tokens.push_back(Token::F32(v)),
+                Value::F64(v) => tokens.push_back(Token::F64(v)),
+                Value::Str(v) => tokens.push_back(Token::Str(v)),
+                Value::Bin(v) => tokens.push_back(Token::Bin(v)),
+                Value::Array(v) => {
+                    tokens.push_back(Token::Array(v.len() as u32));
+                    for x in v.into_iter().rev() {
+                        stack.push(x);
+                    }
+                }
+                Value::Map(v) => {
+                    tokens.push_back(Token::Map(v.len() as u32));
+                    for (k, v) in v.into_iter().rev() {
+                        stack.push(v);
+                        stack.push(k);
+                    }
+                }
+                Value::Ext(tag, data) => tokens.push_back(Token::Ext(tag, data)),
+            }
         }
+        tokens
     }
 }
 
 struct Deserializer {
-    iter: Box<dyn Iterator<Item = Token>>,
+    tokens: VecDeque<Token>,
 }
 
 impl Deserializer {
     pub fn new(value: Value) -> Self {
         Self {
-            iter: value.into_iter(),
+            tokens: value.into_tokens(),
         }
     }
 }
@@ -778,8 +788,8 @@ impl Deserializer {
 impl crate::Deserializer for Deserializer {
     fn deserialize(&mut self) -> Result<Token, crate::InvalidInputError> {
         let token = self
-            .iter
-            .next()
+            .tokens
+            .pop_front()
             .expect("any of (hand-written) implementations of Deserialize should be incorrect");
         Ok(token)
     }
