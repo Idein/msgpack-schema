@@ -637,7 +637,7 @@ impl Token {
 #[error("invalid input")]
 pub struct InvalidInputError;
 
-pub trait Deserializer {
+pub trait Deserializer: Clone {
     fn deserialize(&mut self) -> Result<Token, InvalidInputError>;
 }
 
@@ -821,38 +821,18 @@ impl Deserialize for String {
     }
 }
 
-struct Unget<'a, D: Deserializer> {
-    token: Option<Token>,
-    orig: &'a mut D,
-}
-
-impl<'a, D: Deserializer> Deserializer for Unget<'a, D> {
-    fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
-        if let Some(token) = self.token.take() {
-            Ok(token)
-        } else {
-            self.orig.deserialize()
-        }
-    }
-}
-
-fn unget<'a, D: Deserializer>(token: Token, deserializer: &'a mut D) -> Unget<'a, D> {
-    Unget {
-        token: Some(token),
-        orig: deserializer,
-    }
-}
-
 impl<T: Deserialize> Deserialize for Option<T> {
     fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
-        let token: Token = deserializer.deserialize()?;
+        let mut d = deserializer.clone();
+        let token: Token = d.deserialize()?;
         if token == Token::Nil {
+            *deserializer = d;
             return Ok(None);
         }
-        let v = T::deserialize(&mut unget(token, deserializer))?;
+        let v = T::deserialize(deserializer)?;
         Ok(Some(v))
     }
 }
@@ -944,6 +924,7 @@ trait ReadExt: ReadBytesExt {
 
 impl<R: io::Read> ReadExt for R {}
 
+#[derive(Clone, Copy)]
 struct BinaryDeserializer<'a> {
     r: &'a [u8],
 }

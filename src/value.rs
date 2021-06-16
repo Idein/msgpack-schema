@@ -773,6 +773,7 @@ impl Value {
     }
 }
 
+#[derive(Clone)]
 struct Deserializer {
     tokens: VecDeque<Token>,
 }
