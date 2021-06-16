@@ -568,54 +568,63 @@ pub enum Token {
 }
 
 impl Token {
+    #[doc(hidden)]
     pub fn to_bool(self) -> Option<bool> {
         match self {
             Token::Bool(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_int(self) -> Option<Int> {
         match self {
             Token::Int(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_f32(self) -> Option<f32> {
         match self {
             Token::F32(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_f64(self) -> Option<f64> {
         match self {
             Token::F64(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_str(self) -> Option<Str> {
         match self {
             Token::Str(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_bin(self) -> Option<Bin> {
         match self {
             Token::Bin(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_array(self) -> Option<u32> {
         match self {
             Token::Array(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_map(self) -> Option<u32> {
         match self {
             Token::Map(v) => Some(v),
             _ => None,
         }
     }
+    #[doc(hidden)]
     pub fn to_ext(self) -> Option<(i8, Vec<u8>)> {
         match self {
             Token::Ext(tag, data) => Some((tag, data)),
