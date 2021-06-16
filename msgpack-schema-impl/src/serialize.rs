@@ -90,14 +90,14 @@ fn derive_c_struct(
             let push = if *opt {
                 quote! {
                     if let Some(value) = &self.#ident {
-                        (#tag as u32).serialize(serializer)?;
-                        value.serialize(serializer)?;
+                        (#tag as u32).serialize(serializer);
+                        value.serialize(serializer);
                     }
                 }
             } else {
                 quote! {
-                    (#tag as u32).serialize(serializer)?;
-                    self.#ident.serialize(serializer)?;
+                    (#tag as u32).serialize(serializer);
+                    self.#ident.serialize(serializer);
                 }
             };
             pushes.push(push);
@@ -106,16 +106,15 @@ fn derive_c_struct(
         quote! {
             let mut max_len: u32 = #max_len;
             #( #decs )*
-            serializer.serialize_map(max_len)?;
+            serializer.serialize_map(max_len);
             #( #pushes )*
-            Ok(())
         }
     };
 
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S) -> ::std::result::Result<(), S::Error>
+            fn serialize<S>(&self, serializer: &mut S)
             where
                 S: ::msgpack_schema::Serializer
             {
@@ -143,7 +142,7 @@ fn derive_newtype_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S) -> ::std::result::Result<(), S::Error>
+            fn serialize<S>(&self, serializer: &mut S)
             where
                 S: ::msgpack_schema::Serializer
             {
@@ -185,8 +184,8 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                         1 => {
                             clauses.push(quote! {
                                 Self::#ident(value) => {
-                                    serializer.serialize_array(2)?;
-                                    (#tag as u32).serialize(serializer)?;
+                                    serializer.serialize_array(2);
+                                    (#tag as u32).serialize(serializer);
                                     value.serialize(serializer)
                                 }
                             });
@@ -219,7 +218,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S) -> ::std::result::Result<(), S::Error>
+            fn serialize<S>(&self, serializer: &mut S)
             where
                 S: ::msgpack_schema::Serializer
             {
@@ -292,7 +291,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
-            fn serialize<S>(&self, serializer: &mut S) -> ::std::result::Result<(), S::Error>
+            fn serialize<S>(&self, serializer: &mut S)
             where
                 S: ::msgpack_schema::Serializer
             {

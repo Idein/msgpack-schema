@@ -656,45 +656,36 @@ impl Serializer {
 }
 
 impl crate::Serializer for Serializer {
-    type Error = std::convert::Infallible;
-    fn serialize_nil(&mut self) -> Result<(), Self::Error> {
+    fn serialize_nil(&mut self) {
         self.push_atom(Value::Nil);
-        Ok(())
     }
-    fn serialize_bool(&mut self, v: bool) -> Result<(), Self::Error> {
+    fn serialize_bool(&mut self, v: bool) {
         self.push_atom(Value::from(v));
-        Ok(())
     }
-    fn serialize_int(&mut self, v: Int) -> Result<(), Self::Error> {
+    fn serialize_int(&mut self, v: Int) {
         self.push_atom(Value::Int(v));
-        Ok(())
     }
-    fn serialize_f32(&mut self, v: f32) -> Result<(), Self::Error> {
+    fn serialize_f32(&mut self, v: f32) {
         self.push_atom(Value::from(v));
-        Ok(())
     }
-    fn serialize_f64(&mut self, v: f64) -> Result<(), Self::Error> {
+    fn serialize_f64(&mut self, v: f64) {
         self.push_atom(Value::from(v));
-        Ok(())
     }
-    fn serialize_str(&mut self, v: &[u8]) -> Result<(), Self::Error> {
+    fn serialize_str(&mut self, v: &[u8]) {
         self.push_atom(Value::Str(Str(v.to_owned())));
-        Ok(())
     }
-    fn serialize_bin(&mut self, v: &[u8]) -> Result<(), Self::Error> {
+    fn serialize_bin(&mut self, v: &[u8]) {
         self.push_atom(Value::Bin(Bin(v.to_owned())));
-        Ok(())
     }
-    fn serialize_array(&mut self, len: u32) -> Result<(), Self::Error> {
+    fn serialize_array(&mut self, len: u32) {
         if len == 0 {
             self.push_atom(Value::Array(vec![]));
         } else {
             let vec = iter::repeat(Value::Nil).take(len as usize).collect();
             self.stack.push((0, Value::Array(vec)));
         }
-        Ok(())
     }
-    fn serialize_map(&mut self, len: u32) -> Result<(), Self::Error> {
+    fn serialize_map(&mut self, len: u32) {
         if len == 0 {
             self.push_atom(Value::Map(vec![]));
         } else {
@@ -703,24 +694,21 @@ impl crate::Serializer for Serializer {
                 .collect();
             self.stack.push((0, Value::Map(vec)));
         }
-        Ok(())
     }
-    fn serialize_ext(&mut self, tag: i8, v: &[u8]) -> Result<(), Self::Error> {
+    fn serialize_ext(&mut self, tag: i8, v: &[u8]) {
         self.push_atom(Value::Ext(tag, v.to_owned()));
-        Ok(())
     }
 }
 
 #[doc(hidden)]
 pub fn serialize<S: crate::Serialize>(x: &S) -> Value {
     let mut serializer = Serializer::new();
-    x.serialize(&mut serializer)
-        .unwrap_or_else(|infallible| match infallible {});
+    x.serialize(&mut serializer);
     serializer.finish()
 }
 
 impl crate::Serialize for Value {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: &mut S)
     where
         S: crate::Serializer,
     {
@@ -733,19 +721,17 @@ impl crate::Serialize for Value {
             Value::Str(v) => serializer.serialize_str(&v.0),
             Value::Bin(v) => serializer.serialize_bin(&v.0),
             Value::Array(v) => {
-                serializer.serialize_array(v.len() as u32)?;
+                serializer.serialize_array(v.len() as u32);
                 for x in v {
-                    x.serialize(serializer)?;
+                    x.serialize(serializer);
                 }
-                Ok(())
             }
             Value::Map(v) => {
-                serializer.serialize_map(v.len() as u32)?;
+                serializer.serialize_map(v.len() as u32);
                 for (k, v) in v {
-                    k.serialize(serializer)?;
-                    v.serialize(serializer)?;
+                    k.serialize(serializer);
+                    v.serialize(serializer);
                 }
-                Ok(())
             }
             Value::Ext(tag, data) => serializer.serialize_ext(*tag, data),
         }
@@ -853,7 +839,7 @@ impl crate::Deserialize for Value {
 pub struct Nil;
 
 impl crate::Serialize for Nil {
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: &mut S)
     where
         S: crate::Serializer,
     {
