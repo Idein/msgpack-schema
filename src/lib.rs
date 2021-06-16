@@ -344,7 +344,6 @@
 //! </table>
 //!
 
-mod format;
 pub mod value;
 use byteorder::BigEndian;
 use byteorder::{self, ReadBytesExt};
@@ -355,85 +354,53 @@ use std::io::{self, Write};
 use thiserror::Error;
 use value::{Bin, Int, Str};
 
-enum S {
-    B(BinarySerializer),
-    V(value::Serializer),
-}
-
 pub struct Serializer {
-    inner: S,
+    w: Vec<u8>,
 }
 
 impl Serializer {
+    fn new() -> Self {
+        Self { w: vec![] }
+    }
+    fn into_inner(self) -> Vec<u8> {
+        self.w
+    }
+
     pub fn serialize_nil(&mut self) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_nil(),
-            S::V(s) => s.serialize_nil(),
-        }
+        rmp::encode::write_nil(&mut self.w).unwrap()
     }
     pub fn serialize_bool(&mut self, v: bool) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_bool(v),
-            S::V(s) => s.serialize_bool(v),
-        }
+        rmp::encode::write_bool(&mut self.w, v).unwrap()
     }
     pub fn serialize_int(&mut self, v: Int) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_int(v),
-            S::V(s) => s.serialize_int(v),
+        if let Ok(v) = i64::try_from(v) {
+            rmp::encode::write_sint(&mut self.w, v).unwrap();
+        } else {
+            rmp::encode::write_uint(&mut self.w, u64::try_from(v).unwrap()).unwrap();
         }
     }
     pub fn serialize_f32(&mut self, v: f32) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_f32(v),
-            S::V(s) => s.serialize_f32(v),
-        }
+        rmp::encode::write_f32(&mut self.w, v).unwrap();
     }
     pub fn serialize_f64(&mut self, v: f64) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_f64(v),
-            S::V(s) => s.serialize_f64(v),
-        }
+        rmp::encode::write_f64(&mut self.w, v).unwrap();
     }
     pub fn serialize_str(&mut self, v: &[u8]) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_str(v),
-            S::V(s) => s.serialize_str(v),
-        }
+        rmp::encode::write_str_len(&mut self.w, v.len() as u32).unwrap();
+        self.w.write_all(v).unwrap();
     }
     pub fn serialize_bin(&mut self, v: &[u8]) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_bin(v),
-            S::V(s) => s.serialize_bin(v),
-        }
+        rmp::encode::write_bin(&mut self.w, v).unwrap();
     }
     pub fn serialize_array(&mut self, len: u32) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_array(len),
-            S::V(s) => s.serialize_array(len),
-        }
+        rmp::encode::write_array_len(&mut self.w, len).unwrap();
     }
     pub fn serialize_map(&mut self, len: u32) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_map(len),
-            S::V(s) => s.serialize_map(len),
-        }
+        rmp::encode::write_map_len(&mut self.w, len).unwrap();
     }
-    pub fn serialize_ext(&mut self, tag: i8, v: &[u8]) {
-        use format::Serializer;
-        match &mut self.inner {
-            S::B(s) => s.serialize_ext(tag, v),
-            S::V(s) => s.serialize_ext(tag, v),
-        }
+    pub fn serialize_ext(&mut self, tag: i8, data: &[u8]) {
+        rmp::encode::write_ext_meta(&mut self.w, data.len() as u32, tag).unwrap();
+        self.w.write_all(data).unwrap();
     }
 }
 
@@ -648,254 +615,6 @@ impl Token {
 #[error("invalid input")]
 pub struct InvalidInputError;
 
-#[derive(Clone)]
-enum D<'a> {
-    B(BinaryDeserializer<'a>),
-    V(value::Deserializer),
-}
-
-#[derive(Clone)]
-pub struct Deserializer<'a> {
-    inner: D<'a>,
-}
-
-impl<'a> Deserializer<'a> {
-    pub fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
-        use format::Deserializer;
-        match &mut self.inner {
-            D::B(d) => d.deserialize(),
-            D::V(d) => d.deserialize(),
-        }
-    }
-}
-
-#[derive(Debug, Error)]
-#[error("validation failed")]
-pub struct ValidationError;
-
-#[derive(Debug, Error)]
-pub enum DeserializeError {
-    #[error(transparent)]
-    InvalidInput(#[from] InvalidInputError),
-    #[error(transparent)]
-    Validation(#[from] ValidationError),
-}
-
-pub trait Deserialize: Sized {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError>;
-}
-
-impl Deserialize for bool {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let v = deserializer
-            .deserialize()?
-            .to_bool()
-            .ok_or(ValidationError)?;
-        Ok(v)
-    }
-}
-
-impl Deserialize for Int {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let v = deserializer
-            .deserialize()?
-            .to_int()
-            .ok_or(ValidationError)?;
-        Ok(v)
-    }
-}
-
-impl Deserialize for u8 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for u16 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for u32 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for u64 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for i8 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for i16 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for i32 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for i64 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        Int::deserialize(deserializer)?
-            .try_into()
-            .map_err(|_| ValidationError.into())
-    }
-}
-
-impl Deserialize for f32 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        deserializer
-            .deserialize()?
-            .to_f32()
-            .ok_or(ValidationError.into())
-    }
-}
-
-impl Deserialize for f64 {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        deserializer
-            .deserialize()?
-            .to_f64()
-            .ok_or(ValidationError.into())
-    }
-}
-
-impl Deserialize for Str {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let buf = deserializer
-            .deserialize()?
-            .to_str()
-            .ok_or(ValidationError)?;
-        Ok(buf)
-    }
-}
-
-impl Deserialize for String {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let Str(data) = Deserialize::deserialize(deserializer)?;
-        let v = String::from_utf8(data).map_err(|_| ValidationError)?;
-        Ok(v)
-    }
-}
-
-impl<T: Deserialize> Deserialize for Option<T> {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let mut d = deserializer.clone();
-        let token: Token = d.deserialize()?;
-        if token == Token::Nil {
-            *deserializer = d;
-            return Ok(None);
-        }
-        let v = T::deserialize(deserializer)?;
-        Ok(Some(v))
-    }
-}
-
-impl<T: Deserialize> Deserialize for Vec<T> {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        let len = deserializer
-            .deserialize()?
-            .to_array()
-            .ok_or(ValidationError)?;
-        let mut vec = Vec::with_capacity(len as usize);
-        for _ in 0..len {
-            vec.push(T::deserialize(deserializer)?);
-        }
-        Ok(vec.into())
-    }
-}
-
-struct BinarySerializer {
-    w: Vec<u8>,
-}
-
-impl BinarySerializer {
-    pub fn new() -> Self {
-        Self { w: vec![] }
-    }
-    fn into_inner(self) -> Vec<u8> {
-        self.w
-    }
-}
-
-impl format::Serializer for BinarySerializer {
-    fn serialize_nil(&mut self) {
-        rmp::encode::write_nil(&mut self.w).unwrap()
-    }
-    fn serialize_bool(&mut self, v: bool) {
-        rmp::encode::write_bool(&mut self.w, v).unwrap()
-    }
-    fn serialize_int(&mut self, v: Int) {
-        if let Ok(v) = i64::try_from(v) {
-            rmp::encode::write_sint(&mut self.w, v).unwrap();
-        } else {
-            rmp::encode::write_uint(&mut self.w, u64::try_from(v).unwrap()).unwrap();
-        }
-    }
-    fn serialize_f32(&mut self, v: f32) {
-        rmp::encode::write_f32(&mut self.w, v).unwrap();
-    }
-    fn serialize_f64(&mut self, v: f64) {
-        rmp::encode::write_f64(&mut self.w, v).unwrap();
-    }
-    fn serialize_str(&mut self, v: &[u8]) {
-        rmp::encode::write_str_len(&mut self.w, v.len() as u32).unwrap();
-        self.w.write_all(v).unwrap();
-    }
-    fn serialize_bin(&mut self, v: &[u8]) {
-        rmp::encode::write_bin(&mut self.w, v).unwrap();
-    }
-    fn serialize_array(&mut self, len: u32) {
-        rmp::encode::write_array_len(&mut self.w, len).unwrap();
-    }
-    fn serialize_map(&mut self, len: u32) {
-        rmp::encode::write_map_len(&mut self.w, len).unwrap();
-    }
-    fn serialize_ext(&mut self, tag: i8, data: &[u8]) {
-        rmp::encode::write_ext_meta(&mut self.w, data.len() as u32, tag).unwrap();
-        self.w.write_all(data).unwrap();
-    }
-}
-
-/// Write out a MessagePack object.
-pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
-    let mut serializer = Serializer {
-        inner: crate::S::B(BinarySerializer::new()),
-    };
-    s.serialize(&mut serializer);
-    match serializer.inner {
-        crate::S::B(s) => s.into_inner(),
-        crate::S::V(_) => unreachable!(),
-    }
-}
-
 trait ReadExt: ReadBytesExt {
     fn read_to_vec(&mut self, len: usize) -> Result<Vec<u8>, io::Error> {
         let mut buf = vec![];
@@ -908,18 +627,16 @@ trait ReadExt: ReadBytesExt {
 impl<R: io::Read> ReadExt for R {}
 
 #[derive(Clone, Copy)]
-struct BinaryDeserializer<'a> {
+pub struct Deserializer<'a> {
     r: &'a [u8],
 }
 
-impl<'a> BinaryDeserializer<'a> {
-    pub fn new(r: &'a [u8]) -> Self {
+impl<'a> Deserializer<'a> {
+    fn new(r: &'a [u8]) -> Self {
         Self { r }
     }
-}
 
-impl<'a> format::Deserializer for BinaryDeserializer<'a> {
-    fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
+    pub fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
         let token = match rmp::decode::read_marker(&mut self.r)
             .map_err(|_| InvalidInputError.into())?
         {
@@ -1144,12 +861,180 @@ impl<'a> format::Deserializer for BinaryDeserializer<'a> {
     }
 }
 
+#[derive(Debug, Error)]
+#[error("validation failed")]
+pub struct ValidationError;
+
+#[derive(Debug, Error)]
+pub enum DeserializeError {
+    #[error(transparent)]
+    InvalidInput(#[from] InvalidInputError),
+    #[error(transparent)]
+    Validation(#[from] ValidationError),
+}
+
+pub trait Deserialize: Sized {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError>;
+}
+
+impl Deserialize for bool {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let v = deserializer
+            .deserialize()?
+            .to_bool()
+            .ok_or(ValidationError)?;
+        Ok(v)
+    }
+}
+
+impl Deserialize for Int {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let v = deserializer
+            .deserialize()?
+            .to_int()
+            .ok_or(ValidationError)?;
+        Ok(v)
+    }
+}
+
+impl Deserialize for u8 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for u16 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for u32 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for u64 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for i8 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for i16 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for i32 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for i64 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Int::deserialize(deserializer)?
+            .try_into()
+            .map_err(|_| ValidationError.into())
+    }
+}
+
+impl Deserialize for f32 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        deserializer
+            .deserialize()?
+            .to_f32()
+            .ok_or(ValidationError.into())
+    }
+}
+
+impl Deserialize for f64 {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        deserializer
+            .deserialize()?
+            .to_f64()
+            .ok_or(ValidationError.into())
+    }
+}
+
+impl Deserialize for Str {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let buf = deserializer
+            .deserialize()?
+            .to_str()
+            .ok_or(ValidationError)?;
+        Ok(buf)
+    }
+}
+
+impl Deserialize for String {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let Str(data) = Deserialize::deserialize(deserializer)?;
+        let v = String::from_utf8(data).map_err(|_| ValidationError)?;
+        Ok(v)
+    }
+}
+
+impl<T: Deserialize> Deserialize for Option<T> {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let mut d = deserializer.clone();
+        let token: Token = d.deserialize()?;
+        if token == Token::Nil {
+            *deserializer = d;
+            return Ok(None);
+        }
+        let v = T::deserialize(deserializer)?;
+        Ok(Some(v))
+    }
+}
+
+impl<T: Deserialize> Deserialize for Vec<T> {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let len = deserializer
+            .deserialize()?
+            .to_array()
+            .ok_or(ValidationError)?;
+        let mut vec = Vec::with_capacity(len as usize);
+        for _ in 0..len {
+            vec.push(T::deserialize(deserializer)?);
+        }
+        Ok(vec.into())
+    }
+}
+
+/// Write out a MessagePack object.
+pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
+    let mut serializer = Serializer::new();
+    s.serialize(&mut serializer);
+    serializer.into_inner()
+}
+
 /// Read out a MessagePack object.
 pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
-    let mut deserializer = Deserializer {
-        inner: crate::D::B(BinaryDeserializer::new(r)),
-    };
-    Ok(D::deserialize(&mut deserializer)?)
+    let mut deserializer = Deserializer::new(r);
+    D::deserialize(&mut deserializer)
 }
 
 /// Constructs a MessagePack object.

@@ -1,7 +1,5 @@
 use crate::Token;
-use std::collections::VecDeque;
 use std::convert::{TryFrom, TryInto};
-use std::iter;
 use thiserror::Error;
 
 /// Integer ranging from `-(2^63)` to `(2^64)-1`.
@@ -602,105 +600,6 @@ impl Value {
     }
 }
 
-pub(crate) struct Serializer {
-    stack: Vec<(usize, Value)>,
-}
-
-#[derive(Error, Debug, Clone)]
-#[error("any of (hand-written) implementations of Serialize should be incorrect")]
-struct SerializerError;
-
-impl Serializer {
-    pub fn new() -> Self {
-        Self { stack: vec![] }
-    }
-
-    pub fn finish(mut self) -> Value {
-        assert_eq!(self.stack.len(), 1, "{}", SerializerError);
-        let (count, value) = self.stack.pop().unwrap();
-        assert_eq!(count, 0, "{}", SerializerError);
-        value
-    }
-
-    fn push_atom(&mut self, mut v: Value) {
-        loop {
-            if let Some((count, container)) = self.stack.last_mut() {
-                if let Some(array) = container.as_array_mut() {
-                    assert!(*count < array.len(), "{}", SerializerError);
-                    array[*count] = v;
-                    *count += 1;
-                    if *count == array.len() {
-                        v = self.stack.pop().unwrap().1;
-                        continue;
-                    }
-                } else if let Some(map) = container.as_map_mut() {
-                    assert!(*count < map.len() * 2, "{}", SerializerError);
-                    if *count % 2 == 0 {
-                        map[*count / 2].0 = v;
-                    } else {
-                        map[*count / 2].1 = v;
-                    }
-                    *count += 1;
-                    if *count == map.len() * 2 {
-                        v = self.stack.pop().unwrap().1;
-                        continue;
-                    }
-                } else {
-                    panic!("{}", SerializerError);
-                }
-            } else {
-                self.stack.push((0, v));
-            }
-            break;
-        }
-    }
-}
-
-impl crate::format::Serializer for Serializer {
-    fn serialize_nil(&mut self) {
-        self.push_atom(Value::Nil);
-    }
-    fn serialize_bool(&mut self, v: bool) {
-        self.push_atom(Value::from(v));
-    }
-    fn serialize_int(&mut self, v: Int) {
-        self.push_atom(Value::Int(v));
-    }
-    fn serialize_f32(&mut self, v: f32) {
-        self.push_atom(Value::from(v));
-    }
-    fn serialize_f64(&mut self, v: f64) {
-        self.push_atom(Value::from(v));
-    }
-    fn serialize_str(&mut self, v: &[u8]) {
-        self.push_atom(Value::Str(Str(v.to_owned())));
-    }
-    fn serialize_bin(&mut self, v: &[u8]) {
-        self.push_atom(Value::Bin(Bin(v.to_owned())));
-    }
-    fn serialize_array(&mut self, len: u32) {
-        if len == 0 {
-            self.push_atom(Value::Array(vec![]));
-        } else {
-            let vec = iter::repeat(Value::Nil).take(len as usize).collect();
-            self.stack.push((0, Value::Array(vec)));
-        }
-    }
-    fn serialize_map(&mut self, len: u32) {
-        if len == 0 {
-            self.push_atom(Value::Map(vec![]));
-        } else {
-            let vec = iter::repeat((Value::Nil, Value::Nil))
-                .take(len as usize)
-                .collect();
-            self.stack.push((0, Value::Map(vec)));
-        }
-    }
-    fn serialize_ext(&mut self, tag: i8, v: &[u8]) {
-        self.push_atom(Value::Ext(tag, v.to_owned()));
-    }
-}
-
 #[doc(hidden)]
 pub fn serialize<S: crate::Serialize>(x: &S) -> Value {
     let buf = crate::serialize(x);
@@ -732,63 +631,6 @@ impl crate::Serialize for Value {
             }
             Value::Ext(tag, data) => serializer.serialize_ext(*tag, data),
         }
-    }
-}
-
-impl Value {
-    fn into_tokens(self) -> VecDeque<Token> {
-        let mut tokens = VecDeque::new();
-        let mut stack = vec![];
-        stack.push(self);
-        while let Some(v) = stack.pop() {
-            match v {
-                Value::Nil => tokens.push_back(Token::Nil),
-                Value::Bool(v) => tokens.push_back(Token::Bool(v)),
-                Value::Int(v) => tokens.push_back(Token::Int(v)),
-                Value::F32(v) => tokens.push_back(Token::F32(v)),
-                Value::F64(v) => tokens.push_back(Token::F64(v)),
-                Value::Str(v) => tokens.push_back(Token::Str(v)),
-                Value::Bin(v) => tokens.push_back(Token::Bin(v)),
-                Value::Array(v) => {
-                    tokens.push_back(Token::Array(v.len() as u32));
-                    for x in v.into_iter().rev() {
-                        stack.push(x);
-                    }
-                }
-                Value::Map(v) => {
-                    tokens.push_back(Token::Map(v.len() as u32));
-                    for (k, v) in v.into_iter().rev() {
-                        stack.push(v);
-                        stack.push(k);
-                    }
-                }
-                Value::Ext(tag, data) => tokens.push_back(Token::Ext(tag, data)),
-            }
-        }
-        tokens
-    }
-}
-
-#[derive(Clone)]
-pub(crate) struct Deserializer {
-    tokens: VecDeque<Token>,
-}
-
-impl Deserializer {
-    pub fn new(value: Value) -> Self {
-        Self {
-            tokens: value.into_tokens(),
-        }
-    }
-}
-
-impl crate::format::Deserializer for Deserializer {
-    fn deserialize(&mut self) -> Result<Token, crate::InvalidInputError> {
-        let token = self
-            .tokens
-            .pop_front()
-            .expect("any of (hand-written) implementations of Deserialize should be incorrect");
-        Ok(token)
     }
 }
 
