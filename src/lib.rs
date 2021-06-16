@@ -350,7 +350,7 @@ use byteorder::{self, ReadBytesExt};
 pub use msgpack_schema_impl::*;
 use std::convert::TryFrom;
 use std::convert::TryInto;
-use std::io;
+use std::io::{self, Write};
 use thiserror::Error;
 use value::{Bin, Int, Str};
 
@@ -877,17 +877,20 @@ impl<T: Deserialize> Deserialize for Vec<T> {
     }
 }
 
-struct BinarySerializer<W> {
-    w: W,
+struct BinarySerializer {
+    w: Vec<u8>,
 }
 
-impl<W: io::Write> BinarySerializer<W> {
-    pub fn new(w: W) -> Self {
-        Self { w }
+impl BinarySerializer {
+    pub fn new() -> Self {
+        Self { w: vec![] }
+    }
+    fn into_inner(self) -> Vec<u8> {
+        self.w
     }
 }
 
-impl<W: io::Write> Serializer for BinarySerializer<W> {
+impl Serializer for BinarySerializer {
     type Error = io::Error;
     fn serialize_nil(&mut self) -> Result<(), Self::Error> {
         rmp::encode::write_nil(&mut self.w)
@@ -937,10 +940,9 @@ impl<W: io::Write> Serializer for BinarySerializer<W> {
 
 /// Write out a MessagePack object.
 pub fn serialize<S: Serialize>(s: S) -> io::Result<Vec<u8>> {
-    let mut buf = vec![];
-    let mut serializer = BinarySerializer::new(&mut buf);
+    let mut serializer = BinarySerializer::new();
     s.serialize(&mut serializer)?;
-    Ok(buf)
+    Ok(serializer.into_inner())
 }
 
 trait ReadExt: ReadBytesExt {
