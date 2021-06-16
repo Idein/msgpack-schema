@@ -344,6 +344,7 @@
 //! </table>
 //!
 
+mod format;
 pub mod value;
 use byteorder::BigEndian;
 use byteorder::{self, ReadBytesExt};
@@ -637,8 +638,25 @@ impl Token {
 #[error("invalid input")]
 pub struct InvalidInputError;
 
-pub trait Deserializer: Clone {
-    fn deserialize(&mut self) -> Result<Token, InvalidInputError>;
+#[derive(Clone)]
+enum D<'a> {
+    B(BinaryDeserializer<'a>),
+    V(value::Deserializer),
+}
+
+#[derive(Clone)]
+pub struct Deserializer<'a> {
+    inner: D<'a>,
+}
+
+impl<'a> Deserializer<'a> {
+    pub fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
+        use format::Deserializer;
+        match &mut self.inner {
+            D::B(d) => d.deserialize(),
+            D::V(d) => d.deserialize(),
+        }
+    }
 }
 
 #[derive(Debug, Error)]
@@ -654,16 +672,11 @@ pub enum DeserializeError {
 }
 
 pub trait Deserialize: Sized {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer;
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError>;
 }
 
 impl Deserialize for bool {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let v = deserializer
             .deserialize()?
             .to_bool()
@@ -673,10 +686,7 @@ impl Deserialize for bool {
 }
 
 impl Deserialize for Int {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let v = deserializer
             .deserialize()?
             .to_int()
@@ -686,10 +696,7 @@ impl Deserialize for Int {
 }
 
 impl Deserialize for u8 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -697,10 +704,7 @@ impl Deserialize for u8 {
 }
 
 impl Deserialize for u16 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -708,10 +712,7 @@ impl Deserialize for u16 {
 }
 
 impl Deserialize for u32 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -719,10 +720,7 @@ impl Deserialize for u32 {
 }
 
 impl Deserialize for u64 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -730,10 +728,7 @@ impl Deserialize for u64 {
 }
 
 impl Deserialize for i8 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -741,10 +736,7 @@ impl Deserialize for i8 {
 }
 
 impl Deserialize for i16 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -752,10 +744,7 @@ impl Deserialize for i16 {
 }
 
 impl Deserialize for i32 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -763,10 +752,7 @@ impl Deserialize for i32 {
 }
 
 impl Deserialize for i64 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         Int::deserialize(deserializer)?
             .try_into()
             .map_err(|_| ValidationError.into())
@@ -774,10 +760,7 @@ impl Deserialize for i64 {
 }
 
 impl Deserialize for f32 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         deserializer
             .deserialize()?
             .to_f32()
@@ -786,10 +769,7 @@ impl Deserialize for f32 {
 }
 
 impl Deserialize for f64 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         deserializer
             .deserialize()?
             .to_f64()
@@ -798,10 +778,7 @@ impl Deserialize for f64 {
 }
 
 impl Deserialize for Str {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let buf = deserializer
             .deserialize()?
             .to_str()
@@ -811,10 +788,7 @@ impl Deserialize for Str {
 }
 
 impl Deserialize for String {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let Str(data) = Deserialize::deserialize(deserializer)?;
         let v = String::from_utf8(data).map_err(|_| ValidationError)?;
         Ok(v)
@@ -822,10 +796,7 @@ impl Deserialize for String {
 }
 
 impl<T: Deserialize> Deserialize for Option<T> {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let mut d = deserializer.clone();
         let token: Token = d.deserialize()?;
         if token == Token::Nil {
@@ -838,10 +809,7 @@ impl<T: Deserialize> Deserialize for Option<T> {
 }
 
 impl<T: Deserialize> Deserialize for Vec<T> {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-    where
-        D: Deserializer,
-    {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let len = deserializer
             .deserialize()?
             .to_array()
@@ -935,7 +903,7 @@ impl<'a> BinaryDeserializer<'a> {
     }
 }
 
-impl<'a> Deserializer for BinaryDeserializer<'a> {
+impl<'a> format::Deserializer for BinaryDeserializer<'a> {
     fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
         let token = match rmp::decode::read_marker(&mut self.r)
             .map_err(|_| InvalidInputError.into())?
@@ -1163,7 +1131,9 @@ impl<'a> Deserializer for BinaryDeserializer<'a> {
 
 /// Read out a MessagePack object.
 pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
-    let mut deserializer = BinaryDeserializer::new(r);
+    let mut deserializer = Deserializer {
+        inner: crate::D::B(BinaryDeserializer::new(r)),
+    };
     Ok(D::deserialize(&mut deserializer)?)
 }
 
@@ -1233,10 +1203,7 @@ mod tests {
     }
 
     impl Deserialize for Human {
-        fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
-        where
-            D: Deserializer,
-        {
+        fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
             let len = deserializer
                 .deserialize()?
                 .to_map()

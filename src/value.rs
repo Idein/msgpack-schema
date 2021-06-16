@@ -774,7 +774,7 @@ impl Value {
 }
 
 #[derive(Clone)]
-struct Deserializer {
+pub(crate) struct Deserializer {
     tokens: VecDeque<Token>,
 }
 
@@ -786,7 +786,7 @@ impl Deserializer {
     }
 }
 
-impl crate::Deserializer for Deserializer {
+impl crate::format::Deserializer for Deserializer {
     fn deserialize(&mut self) -> Result<Token, crate::InvalidInputError> {
         let token = self
             .tokens
@@ -798,15 +798,16 @@ impl crate::Deserializer for Deserializer {
 
 #[doc(hidden)]
 pub fn deserialize<D: crate::Deserialize>(value: Value) -> Result<D, crate::DeserializeError> {
-    let mut deserializer = Deserializer::new(value);
+    let mut deserializer = crate::Deserializer {
+        inner: crate::D::V(Deserializer::new(value)),
+    };
     D::deserialize(&mut deserializer)
 }
 
 impl crate::Deserialize for Value {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError>
-    where
-        D: crate::Deserializer,
-    {
+    fn deserialize(
+        deserializer: &mut crate::Deserializer,
+    ) -> Result<Self, crate::DeserializeError> {
         let x = match deserializer.deserialize()? {
             Token::Nil => Value::Nil,
             Token::Bool(v) => v.into(),
@@ -855,10 +856,9 @@ impl crate::Serialize for Nil {
 }
 
 impl crate::Deserialize for Nil {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError>
-    where
-        D: crate::Deserializer,
-    {
+    fn deserialize(
+        deserializer: &mut crate::Deserializer,
+    ) -> Result<Self, crate::DeserializeError> {
         let token = deserializer.deserialize()?;
         if token != Token::Nil {
             return Err(crate::ValidationError.into());
@@ -872,10 +872,9 @@ impl crate::Deserialize for Nil {
 pub struct Any;
 
 impl crate::Deserialize for Any {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError>
-    where
-        D: crate::Deserializer,
-    {
+    fn deserialize(
+        deserializer: &mut crate::Deserializer,
+    ) -> Result<Self, crate::DeserializeError> {
         let mut count = 1;
         while count > 0 {
             count -= 1;

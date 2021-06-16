@@ -137,10 +137,7 @@ fn derive_c_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
-            where
-                D: ::msgpack_schema::Deserializer,
-            {
+            fn deserialize(__deserializer: &mut ::msgpack_schema::Deserializer) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError> {
                 #fn_body
             }
         }
@@ -165,10 +162,7 @@ fn derive_newtype_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
-            where
-                D: ::msgpack_schema::Deserializer,
-            {
+            fn deserialize(__deserializer: &mut ::msgpack_schema::Deserializer) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError> {
                 #fn_body
             }
         }
@@ -260,10 +254,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
-            where
-                D: ::msgpack_schema::Deserializer,
-            {
+            fn deserialize(__deserializer: &mut ::msgpack_schema::Deserializer) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError> {
                 #fn_body
             }
         }
@@ -334,10 +325,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
-            where
-                D: ::msgpack_schema::Deserializer,
-            {
+            fn deserialize(__deserializer: &mut ::msgpack_schema::Deserializer) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError> {
                 #fn_body
             }
         }
