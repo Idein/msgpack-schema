@@ -91,7 +91,7 @@ fn derive_c_struct(
             filters.push(quote! {
                 #tag => {
                     if #ident.is_some() {
-                        return Err(::msgpack_schema::DeserializeError::DuplicatedField);
+                        return Err(::msgpack_schema::InvalidInputError.into());
                     }
                     #ident = Some(::msgpack_schema::Deserialize::deserialize(__deserializer)?);
                 }
@@ -106,7 +106,7 @@ fn derive_c_struct(
                 }
             } else {
                 quote! {
-                    #ident: #ident.ok_or(::msgpack_schema::DeserializeError::MissingField)?,
+                    #ident: #ident.ok_or(::msgpack_schema::ValidationError)?,
                 }
             };
             ctors.push(push);
@@ -116,7 +116,7 @@ fn derive_c_struct(
             let __len = __deserializer
                 .deserialize()?
                 .to_map()
-                .ok_or(::msgpack_schema::DeserializeError::InvalidType)?;
+                .ok_or(::msgpack_schema::ValidationError)?;
 
             #( #init )*
             for _ in 0..__len {
@@ -137,7 +137,7 @@ fn derive_c_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError<D::Error>>
+            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
             where
                 D: ::msgpack_schema::Deserializer,
             {
@@ -165,7 +165,7 @@ fn derive_newtype_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError<D::Error>>
+            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
             where
                 D: ::msgpack_schema::Deserializer,
             {
@@ -201,7 +201,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             clauses.push(quote! {
                                 #tag => {
                                     if __is_array {
-                                        return Err(::msgpack_schema::DeserializeError::InvalidType);
+                                        return Err(::msgpack_schema::ValidationError.into());
                                     }
                                     Ok(Self::#ident())
                                 }
@@ -211,7 +211,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             clauses.push(quote! {
                                 #tag => {
                                     if !__is_array {
-                                        return Err(::msgpack_schema::DeserializeError::InvalidType);
+                                        return Err(::msgpack_schema::ValidationError.into());
                                     }
                                     Ok(Self::#ident(Deserialize::deserialize(__deserializer)?))
                                 }
@@ -238,21 +238,21 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
         quote! {
             let (__tag, __is_array): (u32, bool) = match __deserializer.deserialize()? {
                 ::msgpack_schema::Token::Int(v) => {
-                    (<u32 as ::std::convert::TryFrom<_>>::try_from(v).map_err(|_| ::msgpack_schema::DeserializeError::IntegerOutOfRange)?, false)
+                    (<u32 as ::std::convert::TryFrom<_>>::try_from(v).map_err(|_| ::msgpack_schema::ValidationError)?, false)
                 }
                 ::msgpack_schema::Token::Array(len) => {
                     if len != 2 {
-                        return Err(::msgpack_schema::DeserializeError::InvalidLength);
+                        return Err(::msgpack_schema::ValidationError.into());
                     }
                     (u32::deserialize(__deserializer)?, true)
                 }
                 _ => {
-                    return Err(::msgpack_schema::DeserializeError::InvalidType);
+                    return Err(::msgpack_schema::ValidationError.into());
                 }
             };
             match __tag {
                 #( #clauses )*
-                _ => Err(::msgpack_schema::DeserializeError::UnknownVariant),
+                _ => Err(::msgpack_schema::ValidationError.into()),
             }
         }
     };
@@ -260,7 +260,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError<D::Error>>
+            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
             where
                 D: ::msgpack_schema::Deserializer,
             {
@@ -327,14 +327,14 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
         quote! {
             let __value = ::msgpack_schema::value::Value::deserialize(__deserializer)?;
             #( #clauses )*
-            Err(::msgpack_schema::DeserializeError::UnknownVariant)
+            Err(::msgpack_schema::ValidationError.into())
         }
     };
 
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
-            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError<D::Error>>
+            fn deserialize<D>(__deserializer: &mut D) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError>
             where
                 D: ::msgpack_schema::Deserializer,
             {

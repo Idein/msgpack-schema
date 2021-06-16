@@ -1,5 +1,5 @@
 use crate::Token;
-use std::convert::{Infallible, TryFrom, TryInto};
+use std::convert::{TryFrom, TryInto};
 use std::iter;
 use thiserror::Error;
 
@@ -776,9 +776,7 @@ impl Deserializer {
 }
 
 impl crate::Deserializer for Deserializer {
-    type Error = std::convert::Infallible;
-
-    fn deserialize(&mut self) -> Result<Token, Self::Error> {
+    fn deserialize(&mut self) -> Result<Token, crate::InvalidInputError> {
         let token = self
             .iter
             .next()
@@ -788,15 +786,13 @@ impl crate::Deserializer for Deserializer {
 }
 
 #[doc(hidden)]
-pub fn deserialize<D: crate::Deserialize>(
-    value: Value,
-) -> Result<D, crate::DeserializeError<Infallible>> {
+pub fn deserialize<D: crate::Deserialize>(value: Value) -> Result<D, crate::DeserializeError> {
     let mut deserializer = Deserializer::new(value);
     D::deserialize(&mut deserializer)
 }
 
 impl crate::Deserialize for Value {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError>
     where
         D: crate::Deserializer,
     {
@@ -848,13 +844,13 @@ impl crate::Serialize for Nil {
 }
 
 impl crate::Deserialize for Nil {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError>
     where
         D: crate::Deserializer,
     {
         let token = deserializer.deserialize()?;
         if token != Token::Nil {
-            return Err(crate::DeserializeError::InvalidType);
+            return Err(crate::ValidationError.into());
         }
         Ok(Self)
     }
@@ -865,7 +861,7 @@ impl crate::Deserialize for Nil {
 pub struct Any;
 
 impl crate::Deserialize for Any {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, crate::DeserializeError>
     where
         D: crate::Deserializer,
     {

@@ -624,197 +624,190 @@ impl Token {
     }
 }
 
+#[derive(Debug, Error)]
+#[error("invalid input")]
+pub struct InvalidInputError;
+
 pub trait Deserializer {
-    type Error: std::error::Error;
-    fn deserialize(&mut self) -> Result<Token, Self::Error>;
+    fn deserialize(&mut self) -> Result<Token, InvalidInputError>;
 }
 
 #[derive(Debug, Error)]
-pub enum DeserializeError<E: std::error::Error> {
+#[error("validation failed")]
+pub struct ValidationError;
+
+#[derive(Debug, Error)]
+pub enum DeserializeError {
     #[error(transparent)]
-    Deserializer(#[from] E),
-    #[error("invalid type")]
-    InvalidType,
-    #[error("integer value out of range")]
-    IntegerOutOfRange,
-    #[error("invalid utf8")]
-    InvalidUtf8,
-    #[error("invalid length")]
-    InvalidLength,
-    #[error("duplicated field")]
-    DuplicatedField,
-    #[error("missing field")]
-    MissingField,
-    #[error("unknown variant")]
-    UnknownVariant,
-    #[error("invalid value")]
-    InvalidValue,
+    InvalidInput(#[from] InvalidInputError),
+    #[error(transparent)]
+    Validation(#[from] ValidationError),
 }
 
 pub trait Deserialize: Sized {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer;
 }
 
 impl Deserialize for bool {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         let v = deserializer
             .deserialize()?
             .to_bool()
-            .ok_or(DeserializeError::InvalidType)?;
+            .ok_or(ValidationError)?;
         Ok(v)
     }
 }
 
 impl Deserialize for Int {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         let v = deserializer
             .deserialize()?
             .to_int()
-            .ok_or(DeserializeError::InvalidType)?;
+            .ok_or(ValidationError)?;
         Ok(v)
     }
 }
 
 impl Deserialize for u8 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for u16 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for u32 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for u64 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for i8 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for i16 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for i32 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for i64 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         Int::deserialize(deserializer)?
             .try_into()
-            .map_err(|_| DeserializeError::IntegerOutOfRange)
+            .map_err(|_| ValidationError.into())
     }
 }
 
 impl Deserialize for f32 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         deserializer
             .deserialize()?
             .to_f32()
-            .ok_or(DeserializeError::InvalidType)
+            .ok_or(ValidationError.into())
     }
 }
 
 impl Deserialize for f64 {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         deserializer
             .deserialize()?
             .to_f64()
-            .ok_or(DeserializeError::InvalidType)
+            .ok_or(ValidationError.into())
     }
 }
 
 impl Deserialize for Str {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         let buf = deserializer
             .deserialize()?
             .to_str()
-            .ok_or(DeserializeError::InvalidType)?;
+            .ok_or(ValidationError)?;
         Ok(buf)
     }
 }
 
 impl Deserialize for String {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         let Str(data) = Deserialize::deserialize(deserializer)?;
-        let v = String::from_utf8(data).map_err(|_| DeserializeError::InvalidUtf8)?;
+        let v = String::from_utf8(data).map_err(|_| ValidationError)?;
         Ok(v)
     }
 }
@@ -825,9 +818,7 @@ struct Unget<'a, D: Deserializer> {
 }
 
 impl<'a, D: Deserializer> Deserializer for Unget<'a, D> {
-    type Error = D::Error;
-
-    fn deserialize(&mut self) -> Result<Token, Self::Error> {
+    fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
         if let Some(token) = self.token.take() {
             Ok(token)
         } else {
@@ -844,7 +835,7 @@ fn unget<'a, D: Deserializer>(token: Token, deserializer: &'a mut D) -> Unget<'a
 }
 
 impl<T: Deserialize> Deserialize for Option<T> {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
@@ -858,14 +849,14 @@ impl<T: Deserialize> Deserialize for Option<T> {
 }
 
 impl<T: Deserialize> Deserialize for Vec<T> {
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+    fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
     where
         D: Deserializer,
     {
         let len = deserializer
             .deserialize()?
             .to_array()
-            .ok_or(DeserializeError::InvalidType)?;
+            .ok_or(ValidationError)?;
         let mut vec = Vec::with_capacity(len as usize);
         for _ in 0..len {
             vec.push(T::deserialize(deserializer)?);
@@ -955,104 +946,233 @@ impl<R: io::Read> BinaryDeserializer<R> {
 }
 
 impl<R: io::Read> Deserializer for BinaryDeserializer<R> {
-    type Error = io::Error;
-
-    fn deserialize(&mut self) -> Result<Token, Self::Error> {
+    fn deserialize(&mut self) -> Result<Token, InvalidInputError> {
         let token = match rmp::decode::read_marker(&mut self.r)
-            .map_err(|rmp::decode::MarkerReadError(err)| err)?
+            .map_err(|_| InvalidInputError.into())?
         {
             rmp::Marker::Null => Token::Nil,
             rmp::Marker::True => Token::Bool(true),
             rmp::Marker::False => Token::Bool(false),
             rmp::Marker::FixPos(v) => Token::Int(Int::from(v)),
             rmp::Marker::FixNeg(v) => Token::Int(Int::from(v)),
-            rmp::Marker::U8 => Token::Int(Int::from(self.r.read_u8()?)),
-            rmp::Marker::U16 => Token::Int(Int::from(self.r.read_u16::<BigEndian>()?)),
-            rmp::Marker::U32 => Token::Int(Int::from(self.r.read_u32::<BigEndian>()?)),
-            rmp::Marker::U64 => Token::Int(Int::from(self.r.read_u64::<BigEndian>()?)),
-            rmp::Marker::I8 => Token::Int(Int::from(self.r.read_i8()?)),
-            rmp::Marker::I16 => Token::Int(Int::from(self.r.read_i16::<BigEndian>()?)),
-            rmp::Marker::I32 => Token::Int(Int::from(self.r.read_i32::<BigEndian>()?)),
-            rmp::Marker::I64 => Token::Int(Int::from(self.r.read_i64::<BigEndian>()?)),
-            rmp::Marker::F32 => Token::F32(self.r.read_f32::<BigEndian>()?),
-            rmp::Marker::F64 => Token::F64(self.r.read_f64::<BigEndian>()?),
+            rmp::Marker::U8 => Token::Int(Int::from(
+                self.r.read_u8().map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::U16 => Token::Int(Int::from(
+                self.r
+                    .read_u16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::U32 => Token::Int(Int::from(
+                self.r
+                    .read_u32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::U64 => Token::Int(Int::from(
+                self.r
+                    .read_u64::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::I8 => Token::Int(Int::from(
+                self.r.read_i8().map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::I16 => Token::Int(Int::from(
+                self.r
+                    .read_i16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::I32 => Token::Int(Int::from(
+                self.r
+                    .read_i32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::I64 => Token::Int(Int::from(
+                self.r
+                    .read_i64::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            )),
+            rmp::Marker::F32 => Token::F32(
+                self.r
+                    .read_f32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            ),
+            rmp::Marker::F64 => Token::F64(
+                self.r
+                    .read_f64::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())?,
+            ),
             rmp::Marker::FixStr(len) => {
                 let len = len as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
+                Token::Str(Str(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::Str8 => {
-                let len = self.r.read_u8()? as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
+                let len = self.r.read_u8().map_err(|_| InvalidInputError.into())? as usize;
+                Token::Str(Str(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::Str16 => {
-                let len = self.r.read_u16::<BigEndian>()? as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
+                let len = self
+                    .r
+                    .read_u16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as usize;
+                Token::Str(Str(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::Str32 => {
-                let len = self.r.read_u32::<BigEndian>()? as usize;
-                Token::Str(Str(self.r.read_to_vec(len)?))
+                let len = self
+                    .r
+                    .read_u32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as usize;
+                Token::Str(Str(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::Bin8 => {
-                let len = self.r.read_u8()? as usize;
-                Token::Bin(Bin(self.r.read_to_vec(len)?))
+                let len = self.r.read_u8().map_err(|_| InvalidInputError.into())? as usize;
+                Token::Bin(Bin(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::Bin16 => {
-                let len = self.r.read_u16::<BigEndian>()? as usize;
-                Token::Bin(Bin(self.r.read_to_vec(len)?))
+                let len = self
+                    .r
+                    .read_u16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as usize;
+                Token::Bin(Bin(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::Bin32 => {
-                let len = self.r.read_u32::<BigEndian>()? as usize;
-                Token::Bin(Bin(self.r.read_to_vec(len)?))
+                let len = self
+                    .r
+                    .read_u32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as usize;
+                Token::Bin(Bin(self
+                    .r
+                    .read_to_vec(len)
+                    .map_err(|_| InvalidInputError.into())?))
             }
             rmp::Marker::FixArray(len) => Token::Array(len as u32),
-            rmp::Marker::Array16 => Token::Array(self.r.read_u16::<BigEndian>()? as u32),
-            rmp::Marker::Array32 => Token::Array(self.r.read_u32::<BigEndian>()? as u32),
+            rmp::Marker::Array16 => Token::Array(
+                self.r
+                    .read_u16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as u32,
+            ),
+            rmp::Marker::Array32 => Token::Array(
+                self.r
+                    .read_u32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as u32,
+            ),
             rmp::Marker::FixMap(len) => Token::Map(len as u32),
-            rmp::Marker::Map16 => Token::Map(self.r.read_u16::<BigEndian>()? as u32),
-            rmp::Marker::Map32 => Token::Map(self.r.read_u32::<BigEndian>()? as u32),
+            rmp::Marker::Map16 => Token::Map(
+                self.r
+                    .read_u16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as u32,
+            ),
+            rmp::Marker::Map32 => Token::Map(
+                self.r
+                    .read_u32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as u32,
+            ),
             rmp::Marker::FixExt1 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(1)?)
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(1)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::FixExt2 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(2)?)
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(2)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::FixExt4 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(4)?)
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(4)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::FixExt8 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(8)?)
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(8)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::FixExt16 => {
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(16)?)
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(16)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::Ext8 => {
-                let len = self.r.read_u8()? as usize;
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(len)?)
+                let len = self.r.read_u8().map_err(|_| InvalidInputError.into())? as usize;
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(len)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::Ext16 => {
-                let len = self.r.read_u16::<BigEndian>()? as usize;
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(len)?)
+                let len = self
+                    .r
+                    .read_u16::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as usize;
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(len)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
             rmp::Marker::Ext32 => {
-                let len = self.r.read_u32::<BigEndian>()? as usize;
-                let tag = self.r.read_i8()?;
-                Token::Ext(tag, self.r.read_to_vec(len)?)
+                let len = self
+                    .r
+                    .read_u32::<BigEndian>()
+                    .map_err(|_| InvalidInputError.into())? as usize;
+                let tag = self.r.read_i8().map_err(|_| InvalidInputError.into())?;
+                Token::Ext(
+                    tag,
+                    self.r
+                        .read_to_vec(len)
+                        .map_err(|_| InvalidInputError.into())?,
+                )
             }
-            rmp::Marker::Reserved => Token::Nil,
+            rmp::Marker::Reserved => return Err(InvalidInputError.into()),
         };
         Ok(token)
     }
 }
 
 /// Read out a MessagePack object.
-pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError<io::Error>> {
+pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
     let mut deserializer = BinaryDeserializer::new(r);
     Ok(D::deserialize(&mut deserializer)?)
 }
@@ -1123,14 +1243,14 @@ mod tests {
     }
 
     impl Deserialize for Human {
-        fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError<D::Error>>
+        fn deserialize<D>(deserializer: &mut D) -> Result<Self, DeserializeError>
         where
             D: Deserializer,
         {
             let len = deserializer
                 .deserialize()?
                 .to_map()
-                .ok_or(DeserializeError::InvalidType)?;
+                .ok_or(ValidationError)?;
 
             let mut age: Option<u32> = None;
             let mut name: Option<String> = None;
@@ -1139,13 +1259,13 @@ mod tests {
                 match tag {
                     0 => {
                         if age.is_some() {
-                            return Err(DeserializeError::DuplicatedField);
+                            return Err(InvalidInputError.into());
                         }
                         age = Some(Deserialize::deserialize(deserializer)?);
                     }
                     1 => {
                         if name.is_some() {
-                            return Err(DeserializeError::DuplicatedField);
+                            return Err(InvalidInputError.into());
                         }
                         name = Some(Deserialize::deserialize(deserializer)?);
                     }
@@ -1155,8 +1275,8 @@ mod tests {
                 }
             }
             Ok(Self {
-                age: age.ok_or(DeserializeError::MissingField)?,
-                name: name.ok_or(DeserializeError::MissingField)?,
+                age: age.ok_or(ValidationError)?,
+                name: name.ok_or(ValidationError)?,
             })
         }
     }
