@@ -1,4 +1,6 @@
-use crate::Token;
+use crate::{
+    Deserialize, DeserializeError, Deserializer, Serialize, Serializer, Token, ValidationError,
+};
 use std::convert::{TryFrom, TryInto};
 use thiserror::Error;
 
@@ -612,14 +614,8 @@ impl Value {
     }
 }
 
-#[doc(hidden)]
-pub fn serialize<S: crate::Serialize>(x: &S) -> Value {
-    let buf = crate::serialize(x);
-    crate::deserialize(&buf).unwrap()
-}
-
-impl crate::Serialize for Value {
-    fn serialize(&self, serializer: &mut crate::Serializer) {
+impl Serialize for Value {
+    fn serialize(&self, serializer: &mut Serializer) {
         match self {
             Value::Nil => serializer.serialize_nil(),
             Value::Bool(v) => serializer.serialize_bool(*v),
@@ -646,16 +642,8 @@ impl crate::Serialize for Value {
     }
 }
 
-#[doc(hidden)]
-pub fn deserialize<D: crate::Deserialize>(value: Value) -> Result<D, crate::DeserializeError> {
-    let buf = crate::serialize(value);
-    crate::deserialize::<D>(&buf)
-}
-
-impl crate::Deserialize for Value {
-    fn deserialize(
-        deserializer: &mut crate::Deserializer,
-    ) -> Result<Self, crate::DeserializeError> {
+impl Deserialize for Value {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let x = match deserializer.deserialize()? {
             Token::Nil => Value::Nil,
             Token::Bool(v) => v.into(),
@@ -687,6 +675,18 @@ impl crate::Deserialize for Value {
     }
 }
 
+#[doc(hidden)]
+pub fn serialize<S: Serialize>(x: &S) -> Value {
+    let buf = crate::serialize(x);
+    crate::deserialize(&buf).unwrap()
+}
+
+#[doc(hidden)]
+pub fn deserialize<D: Deserialize>(value: Value) -> Result<D, DeserializeError> {
+    let buf = crate::serialize(value);
+    crate::deserialize::<D>(&buf)
+}
+
 /// A special type for serializing and deserializing the `nil` object.
 ///
 /// In our data model `()` does not represent the `nil` object because `()` should be zero-byte but `nil` has a size.
@@ -694,19 +694,17 @@ impl crate::Deserialize for Value {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Nil;
 
-impl crate::Serialize for Nil {
-    fn serialize(&self, serializer: &mut crate::Serializer) {
+impl Serialize for Nil {
+    fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_nil()
     }
 }
 
-impl crate::Deserialize for Nil {
-    fn deserialize(
-        deserializer: &mut crate::Deserializer,
-    ) -> Result<Self, crate::DeserializeError> {
+impl Deserialize for Nil {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let token = deserializer.deserialize()?;
         if token != Token::Nil {
-            return Err(crate::ValidationError.into());
+            return Err(ValidationError.into());
         }
         Ok(Self)
     }
@@ -716,10 +714,8 @@ impl crate::Deserialize for Nil {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Any;
 
-impl crate::Deserialize for Any {
-    fn deserialize(
-        deserializer: &mut crate::Deserializer,
-    ) -> Result<Self, crate::DeserializeError> {
+impl Deserialize for Any {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         let mut count = 1;
         while count > 0 {
             count -= 1;
