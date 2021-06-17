@@ -119,10 +119,10 @@ fn derive_c_struct(
         }
 
         quote! {
-            let __len = __deserializer
-                .deserialize_token()?
-                .to_map()
-                .ok_or(::msgpack_schema::ValidationError)?;
+            let __len = match __deserializer.deserialize_token()? {
+                ::msgpack_schema::Token::Map(len) => len,
+                _ => return Err(::msgpack_schema::ValidationError.into()),
+            };
 
             #( #init )*
             for _ in 0..__len {
@@ -375,10 +375,10 @@ fn derive_untagged_c_struct(
         }
 
         quote! {
-            let __len = __deserializer
-                .deserialize_token()?
-                .to_array()
-                .ok_or(::msgpack_schema::ValidationError)?;
+            let __len = match __deserializer.deserialize_token()? {
+                Token::Array(len) => len,
+                _ => return Err(::msgpack_schema::ValidationError.into()),
+            };
 
             if __len != #len {
                 return Err(::msgpack_schema::ValidationError.into());

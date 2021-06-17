@@ -252,7 +252,7 @@ fn serialize_tuple_variants() {
     );
 
     assert_eq!(
-        value::serialize(&Animal::Dog(42u32.into())),
+        value::serialize(&Animal::Dog(42u32)),
         Value::Array(vec![2.into(), 42u32.into()])
     );
 }

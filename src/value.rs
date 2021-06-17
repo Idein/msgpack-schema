@@ -827,16 +827,24 @@ macro_rules! msgpack_value {
     ([ $( $tt: tt )* ]) => {
         {
             #[allow(unused_mut)]
-            let mut array = vec![];
-            $crate::msgpack_array!(array $( $tt )*);
+            let mut array;
+            #[allow(clippy::clippy::vec_init_then_push)]
+            {
+                array = vec![];
+                $crate::msgpack_array!(array $( $tt )*);
+            }
             $crate::value::Value::Array(array)
         }
     };
     ({ $( $tt: tt )* }) => {
         {
             #[allow(unused_mut)]
-            let mut map = vec![];
-            $crate::msgpack_map!(@key map [] $( $tt )*);
+            let mut map;
+            #[allow(clippy::clippy::vec_init_then_push)]
+            {
+                map = vec![];
+                $crate::msgpack_map!(@key map [] $( $tt )*);
+            }
             $crate::value::Value::Map(map)
         }
     };
@@ -853,8 +861,8 @@ mod tests {
     fn msgpack_macro() {
         assert_eq!(Value::Int(Int::from(42)), msgpack_value!(42));
         assert_eq!(Value::Int(Int::from(-42)), msgpack_value!(-42));
-        assert_eq!(Value::F64(3.14), msgpack_value!(3.14));
-        assert_eq!(Value::F32(3.14), msgpack_value!(3.14f32));
+        assert_eq!(Value::F64(1.23), msgpack_value!(1.23));
+        assert_eq!(Value::F32(1.23), msgpack_value!(1.23f32));
         assert_eq!(
             Value::Str(Str("hello world".to_owned().into_bytes())),
             msgpack_value!("hello world")
@@ -943,9 +951,9 @@ mod tests {
         assert_eq!(
             Value::Map(vec![
                 (msgpack_value!(42), msgpack_value!({ true: false })),
-                (msgpack_value!({ nil: 3.14 }), msgpack_value!("hello")),
+                (msgpack_value!({ nil: 1.23 }), msgpack_value!("hello")),
             ]),
-            msgpack_value!({ 42: { true: false }, { nil: 3.14 }: "hello", })
+            msgpack_value!({ 42: { true: false }, { nil: 1.23 }: "hello", })
         );
         assert_eq!(Value::Map(vec![]), msgpack_value!({}));
 
