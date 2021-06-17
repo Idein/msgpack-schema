@@ -25,7 +25,13 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
 
 fn derive_struct(node: &DeriveInput, strut: &DataStruct) -> Result<TokenStream> {
     match &strut.fields {
-        Fields::Named(fields) => derive_c_struct(node, strut, fields),
+        Fields::Named(fields) => {
+            if common::has_untagged(&node.attrs) {
+                derive_untagged_c_struct(node, strut, fields)
+            } else {
+                derive_c_struct(node, strut, fields)
+            }
+        }
         Fields::Unnamed(fields) => {
             let len = fields.unnamed.len();
             match len {
@@ -318,6 +324,69 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
         quote! {
             #( #clauses )*
             Err(::msgpack_schema::ValidationError.into())
+        }
+    };
+
+    let gen = quote! {
+        #[allow(unused_qualifications)]
+        impl #impl_generics #deserialize_trait for #ty #ty_generics #where_clause {
+            fn deserialize(__deserializer: &mut ::msgpack_schema::Deserializer) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError> {
+                #fn_body
+            }
+        }
+    };
+
+    Ok(gen)
+}
+
+fn derive_untagged_c_struct(
+    node: &DeriveInput,
+    _strut: &DataStruct,
+    named_fields: &FieldsNamed,
+) -> Result<TokenStream> {
+    let ty = &node.ident;
+    let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
+    let deserialize_trait = spanned_deserialize_trait(node);
+
+    let fn_body = {
+        let mut members = vec![];
+        for field in &named_fields.named {
+            let ident = field.ident.clone().unwrap();
+            let ty = field.ty.clone();
+            members.push((ident, ty))
+        }
+
+        let len = members.len() as u32;
+
+        let mut init = vec![];
+        for (ident, ty) in &members {
+            let push = quote! {
+                let mut #ident: #ty = __deserializer.deserialize()?;
+            };
+            init.push(push);
+        }
+
+        let mut ctors = vec![];
+        for (ident, _ty) in &members {
+            let push = quote! {
+                #ident,
+            };
+            ctors.push(push);
+        }
+
+        quote! {
+            let __len = __deserializer
+                .deserialize_token()?
+                .to_array()
+                .ok_or(::msgpack_schema::ValidationError)?;
+
+            if __len != #len {
+                return Err(::msgpack_schema::ValidationError.into());
+            }
+            #( #init )*
+            Ok(Self {
+                #( #ctors )*
+            })
         }
     };
 

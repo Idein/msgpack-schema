@@ -77,6 +77,52 @@ Fields in named structs may be tagged with `#[optional]`.
 - On serialization, the key-value pair will not be included in the result map object when the field data contains `None`.
 - On deserialization, the field of the result struct will be filled with `None` when the given MsgPack map object contains no corresponding key-value pair.
 
+### Untagged structs with named fields
+
+Structs with named fields may be attached `#[untagged]`.
+Untagged structs are serialized into an array and will not contain tags.
+
+<table>
+<tr>
+<th>
+schema
+</th>
+<th>
+Rust
+</th>
+<th>
+MessagePack
+</th>
+</tr>
+<tr>
+<td>
+
+```rust
+#[untagged]
+struct S {
+    foo: u32,
+    bar: String,
+}
+```
+
+</td>
+<td>
+
+```rust
+S { foo: 42, bar: "hello".to_owned() }
+```
+
+</td>
+<td>
+
+```js
+[ 42, "hello" ]
+```
+
+</td>
+</tr>
+</table>
+
 ### Newtype structs
 
 Tuple structs with only one element are treated transparently.

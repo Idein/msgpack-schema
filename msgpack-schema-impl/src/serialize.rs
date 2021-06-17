@@ -25,7 +25,13 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
 
 fn derive_struct(node: &DeriveInput, strut: &DataStruct) -> Result<TokenStream> {
     match &strut.fields {
-        Fields::Named(fields) => derive_c_struct(node, strut, fields),
+        Fields::Named(fields) => {
+            if common::has_untagged(&node.attrs) {
+                derive_untagged_c_struct(node, strut, fields)
+            } else {
+                derive_c_struct(node, strut, fields)
+            }
+        }
         Fields::Unnamed(fields) => {
             let len = fields.unnamed.len();
             match len {
@@ -276,6 +282,50 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             match self {
                 #( #clauses )*
             }
+        }
+    };
+
+    let gen = quote! {
+        #[allow(unused_qualifications)]
+        impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
+                #fn_body
+            }
+        }
+    };
+
+    Ok(gen)
+}
+
+fn derive_untagged_c_struct(
+    node: &DeriveInput,
+    _strut: &DataStruct,
+    named_fields: &FieldsNamed,
+) -> Result<TokenStream> {
+    let ty = &node.ident;
+    let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
+    let serialize_trait = spanned_serialize_trait(node);
+
+    let fn_body = {
+        let mut members = vec![];
+        for field in &named_fields.named {
+            let ident = field.ident.clone().unwrap();
+            members.push(ident);
+        }
+
+        let len = members.len() as u32;
+
+        let mut pushes = vec![];
+        for ident in &members {
+            let push = quote! {
+                serializer.serialize(&self.#ident);
+            };
+            pushes.push(push);
+        }
+
+        quote! {
+            serializer.serialize_array(#len);
+            #( #pushes )*
         }
     };
 

@@ -326,6 +326,44 @@ fn deserialize_untagged_enum() {
     assert!(value::deserialize::<Animal>(val).is_err());
 }
 
+#[test]
+fn serialize_untagged_struct() {
+    #[derive(Serialize, Debug, PartialEq, Eq)]
+    #[untagged]
+    struct Human {
+        name: String,
+        age: u32,
+    }
+
+    let val = Human {
+        name: "John".to_string(),
+        age: 42,
+    };
+    assert_eq!(value::serialize(&val), msgpack!(["John", 42]));
+}
+
+#[test]
+fn deserialize_untagged_struct() {
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    #[untagged]
+    struct Human {
+        name: String,
+        age: u32,
+    }
+
+    let val = msgpack!(["John", 42]);
+    assert_eq!(
+        Human {
+            name: "John".to_string(),
+            age: 42,
+        },
+        value::deserialize(val).unwrap()
+    );
+
+    let val = msgpack!(["John", 42, nil]);
+    assert!(value::deserialize::<Human>(val).is_err());
+}
+
 fn arb_value() -> impl Strategy<Value = Value> {
     let leaf = prop_oneof![
         Just(Value::Nil),

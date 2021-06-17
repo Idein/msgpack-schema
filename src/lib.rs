@@ -1,7 +1,7 @@
 //! _msgpack-schema_ is a schema language for describing data formats encoded in MessagePack.
 //! It provides two derive macros `Serialize` and `Deserialize` that allow you to transcode MessagePack binary data to/from Rust data structures in a type-directed way.
 //!
-//! ```rust,ignore
+//! ```rust
 //! use msgpack_schema::{Deserialize, Serialize};
 //!
 //! #[derive(Deserialize, Serialize)]
@@ -73,6 +73,52 @@
 //! - The tagged field must be of type `Option<T>`.
 //! - On serialization, the key-value pair will not be included in the result map object when the field data contains `None`.
 //! - On deserialization, the field of the result struct will be filled with `None` when the given MsgPack map object contains no corresponding key-value pair.
+//!
+//! ### Untagged structs with named fields
+//!
+//! Structs with named fields may be attached `#[untagged]`.
+//! Untagged structs are serialized into an array and will not contain tags.
+//!
+//! <table>
+//! <tr>
+//! <th>
+//! schema
+//! </th>
+//! <th>
+//! Rust
+//! </th>
+//! <th>
+//! MessagePack
+//! </th>
+//! </tr>
+//! <tr>
+//! <td>
+//!
+//! ```rust,ignore
+//! #[untagged]
+//! struct S {
+//!     foo: u32,
+//!     bar: String,
+//! }
+//! ```
+//!
+//! </td>
+//! <td>
+//!
+//! ```rust,ignore
+//! S { foo: 42, bar: "hello".to_owned() }
+//! ```
+//!
+//! </td>
+//! <td>
+//!
+//! ```js
+//! [ 42, "hello" ]
+//! ```
+//!
+//! </td>
+//! </tr>
+//! </table>
 //!
 //! ### Newtype structs
 //!
