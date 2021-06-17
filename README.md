@@ -22,7 +22,7 @@ struct Human {
 
 - The deserializer ignores irrelevant key-value pairs in MsgPack map objects.
 - MsgPack map objects must not have duplicate keys.
-- `Option<T>` is roughly equal to declaring `T | null` in TypeScript. Deserializer interprets `null` as `None` whatever `T` is. So `Option<Option<T>>` is the same as `Option<T>` (unless used together with `#[optional]`.)
+- `Option<T>` is roughly equal to declaring `T | null` in TypeScript. Deserializer interprets `nil` as `None` whatever `T` is. So `Option<Option<T>>` is the same as `Option<T>` (unless used together with `#[optional]`.)
 
 
 ### Structs with named fields
