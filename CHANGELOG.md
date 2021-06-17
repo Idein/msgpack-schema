@@ -8,10 +8,22 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ### Added
 
+### Fixed
+
+### Removed
+
+### Changed
+
+---
+
+## [Released]
+
+## 0.3.0 - 2021-06-17
+
+### Added
+
 - Add `Ext` type.
 - Support untagged structs.
-
-### Fixed
 
 ### Removed
 
@@ -24,10 +36,6 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 - `Serialize` never throws an error.
 - `DeserializeError` no longer contains detailed information.
 - `Deserializer` and `Serializer` are now structs.
-
----
-
-## [Released]
 
 ## 0.2.1 - 2021-06-15
 
