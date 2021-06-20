@@ -1,10 +1,7 @@
 use crate::common;
 use proc_macro2::TokenStream;
-use quote::{quote, quote_spanned};
-use syn::{
-    spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields, FieldsNamed,
-    Result, Visibility,
-};
+use quote::quote;
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields, FieldsNamed, Result};
 
 pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     match &node.data {
@@ -66,7 +63,6 @@ fn derive_c_struct(
 ) -> Result<TokenStream> {
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
-    let serialize_trait = spanned_serialize_trait(node);
 
     let fn_body = {
         let mut members = vec![];
@@ -119,7 +115,7 @@ fn derive_c_struct(
 
     let gen = quote! {
         #[allow(unused_qualifications)]
-        impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
+        impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
             fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
@@ -136,7 +132,6 @@ fn derive_newtype_struct(
 ) -> Result<TokenStream> {
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
-    let serialize_trait = spanned_serialize_trait(node);
 
     let fn_body = quote! {
         serializer.serialize(&self.0);
@@ -144,7 +139,7 @@ fn derive_newtype_struct(
 
     let gen = quote! {
         #[allow(unused_qualifications)]
-        impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
+        impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
             fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
@@ -157,7 +152,6 @@ fn derive_newtype_struct(
 fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
-    let serialize_trait = spanned_serialize_trait(node);
 
     let fn_body = {
         let mut clauses = vec![];
@@ -217,7 +211,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
 
     let gen = quote! {
         #[allow(unused_qualifications)]
-        impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
+        impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
             fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
@@ -230,7 +224,6 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
 fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
-    let serialize_trait = spanned_serialize_trait(node);
 
     let fn_body = {
         let mut members = vec![];
@@ -287,7 +280,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
 
     let gen = quote! {
         #[allow(unused_qualifications)]
-        impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
+        impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
             fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
@@ -304,7 +297,6 @@ fn derive_untagged_c_struct(
 ) -> Result<TokenStream> {
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
-    let serialize_trait = spanned_serialize_trait(node);
 
     let fn_body = {
         let mut members = vec![];
@@ -331,7 +323,7 @@ fn derive_untagged_c_struct(
 
     let gen = quote! {
         #[allow(unused_qualifications)]
-        impl #impl_generics #serialize_trait for #ty #ty_generics #where_clause {
+        impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
             fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
@@ -339,25 +331,4 @@ fn derive_untagged_c_struct(
     };
 
     Ok(gen)
-}
-
-fn spanned_serialize_trait(input: &DeriveInput) -> TokenStream {
-    let path = {
-        let span = match &input.vis {
-            Visibility::Public(vis) => vis.pub_token.span(),
-            Visibility::Crate(vis) => vis.crate_token.span(),
-            Visibility::Restricted(vis) => vis.pub_token.span(),
-            Visibility::Inherited => match &input.data {
-                Data::Struct(data) => data.struct_token.span(),
-                Data::Enum(data) => data.enum_token.span(),
-                Data::Union(data) => data.union_token.span(),
-            },
-        };
-        quote_spanned!(span => ::msgpack_schema::)
-    };
-    let serialize = {
-        let span = input.ident.span();
-        quote_spanned!(span => Serialize)
-    };
-    quote!(#path #serialize)
 }
