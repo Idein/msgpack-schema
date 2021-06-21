@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ## [Released]
 
+## 0.3.1 - 2021-06-21
+
+### Fixed
+
+- Fix Cargo dependency bound.
+
 ## 0.3.0 - 2021-06-17
 
 ### Added
