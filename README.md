@@ -398,8 +398,6 @@ E::Bar(42)
 - tuple variants
 - variants with named fields
 - check duplicated tags
-- `msgpack` macro
-- roundtrip tests for the binary de/serializers
 - `#[required]`
 - untagged variants may not have `#[tag]`
 
