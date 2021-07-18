@@ -1,39 +1,23 @@
-use crate::{attr, common};
+use crate::attr;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields, FieldsNamed, Result};
 
 pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     let attrs = attr::get(&node.attrs)?;
-    if let Some(original) = attrs.optional {
-        return Err(Error::new_spanned(
-            original,
-            "#[optional] at an invalid position",
-        ));
-    }
-    if let Some(tag) = attrs.tag {
-        return Err(Error::new_spanned(
-            tag.original,
-            "#[tag] at an invalid position",
-        ));
-    }
-    let untagged = attrs.untagged;
+    attrs.disallow_optional()?;
+    attrs.disallow_tag()?;
     match &node.data {
         Data::Struct(strut) => match &strut.fields {
             Fields::Named(fields) => {
-                if untagged.is_some() {
+                if attrs.untagged.is_some() {
                     derive_untagged_struct(node, strut, fields)
                 } else {
                     derive_struct(node, strut, fields)
                 }
             }
             Fields::Unnamed(fields) => {
-                if let Some(original) = untagged {
-                    return Err(Error::new_spanned(
-                        original,
-                        "#[untagged] at an invalid position",
-                    ));
-                }
+                attrs.disallow_untagged()?;
                 let len = fields.unnamed.len();
                 match len {
                     0 => {
@@ -52,12 +36,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
                 }
             }
             Fields::Unit => {
-                if let Some(original) = untagged {
-                    return Err(Error::new_spanned(
-                        original,
-                        "#[untagged] at an invalid position",
-                    ));
-                }
+                attrs.disallow_untagged()?;
                 return Err(Error::new_spanned(
                     node,
                     "unit structs as serialize are not supported",
@@ -65,7 +44,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
             }
         },
         Data::Enum(enu) => {
-            if untagged.is_some() {
+            if attrs.untagged.is_some() {
                 derive_untagged_enum(node, enu)
             } else {
                 derive_enum(node, enu)
@@ -90,9 +69,16 @@ fn derive_struct(
         let mut members = vec![];
         for field in &named_fields.named {
             let ident = field.ident.clone().unwrap();
-            let tag = common::get_field_tag(&field)?;
+            let attrs = attr::get(&field.attrs)?;
+            attrs.disallow_untagged()?;
+            let tag = match attrs.tag {
+                Some(tag) => tag.tag,
+                None => {
+                    return Err(Error::new_spanned(field, "no #[tag] given"));
+                }
+            };
             // TODO: require `#[required]` or `#[optional]` for fields of the Option<T> type
-            let opt = common::is_optional(&field)?;
+            let opt = attrs.optional.is_some();
             members.push((ident, tag, opt));
         }
 
@@ -150,10 +136,15 @@ fn derive_struct(
 fn derive_newtype_struct(
     node: &DeriveInput,
     _strut: &DataStruct,
-    _field: &Field,
+    field: &Field,
 ) -> Result<TokenStream> {
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
+
+    let attrs = attr::get(&field.attrs)?;
+    attrs.disallow_tag()?;
+    attrs.disallow_optional()?;
+    attrs.disallow_untagged()?;
 
     let fn_body = quote! {
         serializer.serialize(&self.0);
@@ -179,7 +170,15 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
         let mut clauses = vec![];
         for variant in &enu.variants {
             let ident = variant.ident.clone();
-            let tag = common::get_variant_tag(&variant)?;
+            let attrs = attr::get(&variant.attrs)?;
+            attrs.disallow_optional()?;
+            attrs.disallow_untagged()?;
+            let tag = match attrs.tag {
+                Some(tag) => tag.tag,
+                None => {
+                    return Err(Error::new_spanned(variant, "no #[tag] given"));
+                }
+            };
             match &variant.fields {
                 Fields::Named(_) => {
                     return Err(Error::new_spanned(
@@ -198,6 +197,10 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             });
                         }
                         1 => {
+                            let attrs = attr::get(&fields.unnamed[0].attrs)?;
+                            attrs.disallow_optional()?;
+                            attrs.disallow_tag()?;
+                            attrs.disallow_untagged()?;
                             clauses.push(quote! {
                                 Self::#ident(value) => {
                                     serializer.serialize_array(2);
@@ -250,6 +253,10 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
     let fn_body = {
         let mut members = vec![];
         for variant in &enu.variants {
+            let attrs = attr::get(&variant.attrs)?;
+            attrs.disallow_optional()?;
+            attrs.disallow_tag()?;
+            attrs.disallow_untagged()?;
             match &variant.fields {
                 Fields::Named(_) => {
                     return Err(Error::new_spanned(
@@ -265,6 +272,10 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
                         ));
                     }
                     1 => {
+                        let attrs = attr::get(&fields.unnamed[0].attrs)?;
+                        attrs.disallow_optional()?;
+                        attrs.disallow_tag()?;
+                        attrs.disallow_untagged()?;
                         members.push((variant, &fields.unnamed[0]));
                     }
                     _ => {
@@ -324,6 +335,10 @@ fn derive_untagged_struct(
         let mut members = vec![];
         for field in &named_fields.named {
             let ident = field.ident.clone().unwrap();
+            let attrs = attr::get(&field.attrs)?;
+            attrs.disallow_tag()?;
+            attrs.disallow_optional()?;
+            attrs.disallow_untagged()?;
             members.push(ident);
         }
 

@@ -10,21 +10,17 @@ error: no #[tag] given
 14 |     name: String,
    |     ^^^^^^^^^^^^
 
-error: more than one #[tag] given
-  --> $DIR/tag.rs:19:5
+error: duplicate #[tag] attribute
+  --> $DIR/tag.rs:20:5
    |
-19 | /     #[tag = 0]
-20 | |     #[tag = 1]
-21 | |     name: String,
-   | |________________^
+20 |     #[tag = 1]
+   |     ^^^^^^^^^^
 
-error: more than one #[tag] given
-  --> $DIR/tag.rs:26:5
+error: duplicate #[tag] attribute
+  --> $DIR/tag.rs:27:5
    |
-26 | /     #[tag = 0]
-27 | |     #[tag = 1]
-28 | |     age: u32,
-   | |____________^
+27 |     #[tag = 1]
+   |     ^^^^^^^^^^
 
 error: no #[tag] given
   --> $DIR/tag.rs:36:5
@@ -38,18 +34,14 @@ error: no #[tag] given
 43 |     Dog,
    |     ^^^
 
-error: more than one #[tag] given
-  --> $DIR/tag.rs:48:5
+error: duplicate #[tag] attribute
+  --> $DIR/tag.rs:49:5
    |
-48 | /     #[tag = 0]
-49 | |     #[tag = 1]
-50 | |     Cat,
-   | |_______^
+49 |     #[tag = 1]
+   |     ^^^^^^^^^^
 
-error: more than one #[tag] given
-  --> $DIR/tag.rs:56:5
+error: duplicate #[tag] attribute
+  --> $DIR/tag.rs:57:5
    |
-56 | /     #[tag = 0]
-57 | |     #[tag = 1]
-58 | |     Cat,
-   | |_______^
+57 |     #[tag = 1]
+   |     ^^^^^^^^^^

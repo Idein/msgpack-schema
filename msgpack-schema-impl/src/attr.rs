@@ -9,6 +9,7 @@ pub struct Attrs<'a> {
     pub untagged: Option<&'a Attribute>,
 }
 
+#[derive(Clone)]
 pub struct Tag<'a> {
     pub original: &'a Attribute,
     pub tag: LitInt,
@@ -56,4 +57,36 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
 fn require_empty_attribute(attr: &Attribute) -> Result<()> {
     syn::parse2::<Nothing>(attr.tokens.clone())?;
     Ok(())
+}
+
+impl<'a> Attrs<'a> {
+    pub fn disallow_tag(&self) -> Result<()> {
+        if let Some(tag) = self.tag.clone() {
+            return Err(Error::new_spanned(
+                tag.original,
+                "#[tag] at an invalid position",
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn disallow_optional(&self) -> Result<()> {
+        if let Some(original) = self.optional {
+            return Err(Error::new_spanned(
+                original,
+                "#[optional] at an invalid position",
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn disallow_untagged(&self) -> Result<()> {
+        if let Some(original) = self.untagged {
+            return Err(Error::new_spanned(
+                original,
+                "#[untagged] at an invalid position",
+            ));
+        }
+        Ok(())
+    }
 }

@@ -1,47 +1,47 @@
 error: #[tag] at an invalid position
- --> $DIR/attrs.rs:4:1
+ --> $DIR/item.rs:4:1
   |
 4 | #[tag = 1]
   | ^^^^^^^^^^
 
 error: #[optional] at an invalid position
-  --> $DIR/attrs.rs:10:1
+  --> $DIR/item.rs:10:1
    |
 10 | #[optional]
    | ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/attrs.rs:16:1
+  --> $DIR/item.rs:16:1
    |
 16 | #[untagged]
    | ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/attrs.rs:20:1
+  --> $DIR/item.rs:20:1
    |
 20 | #[untagged]
    | ^^^^^^^^^^^
 
 error: #[tag] at an invalid position
-  --> $DIR/attrs.rs:24:1
+  --> $DIR/item.rs:24:1
    |
 24 | #[tag = 1]
    | ^^^^^^^^^^
 
 error: #[optional] at an invalid position
-  --> $DIR/attrs.rs:30:1
+  --> $DIR/item.rs:30:1
    |
 30 | #[optional]
    | ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/attrs.rs:36:1
+  --> $DIR/item.rs:36:1
    |
 36 | #[untagged]
    | ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/attrs.rs:40:1
+  --> $DIR/item.rs:40:1
    |
 40 | #[untagged]
    | ^^^^^^^^^^^
