@@ -71,12 +71,8 @@ fn derive_struct(
             let ident = field.ident.clone().unwrap();
             let attrs = attr::get(&field.attrs)?;
             attrs.disallow_untagged()?;
-            let tag = match attrs.tag {
-                Some(tag) => tag.tag,
-                None => {
-                    return Err(Error::new_spanned(field, "no #[tag] given"));
-                }
-            };
+            attrs.require_tag(field)?;
+            let tag = attrs.tag.unwrap().tag.clone();
             let opt = attrs.optional.is_some();
             let ty = field.ty.clone();
             members.push((ident, tag, opt, ty))
@@ -196,12 +192,8 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
             let attrs = attr::get(&variant.attrs)?;
             attrs.disallow_optional()?;
             attrs.disallow_untagged()?;
-            let tag = match attrs.tag {
-                Some(tag) => tag.tag,
-                None => {
-                    return Err(Error::new_spanned(variant, "no #[tag] given"));
-                }
-            };
+            attrs.require_tag(variant)?;
+            let tag = attrs.tag.unwrap().tag.clone();
             match &variant.fields {
                 Fields::Named(_) => {
                     return Err(Error::new_spanned(

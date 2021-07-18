@@ -1,3 +1,4 @@
+use quote::ToTokens;
 use syn::{
     parse::{Nothing, ParseStream, Parser},
     Attribute, Error, LitInt, Result, Token,
@@ -86,6 +87,13 @@ impl<'a> Attrs<'a> {
                 original,
                 "#[untagged] at an invalid position",
             ));
+        }
+        Ok(())
+    }
+
+    pub fn require_tag(&self, tokens: impl ToTokens) -> Result<()> {
+        if self.tag.is_none() {
+            return Err(Error::new_spanned(tokens, "no #[tag] given"));
         }
         Ok(())
     }
