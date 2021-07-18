@@ -155,3 +155,14 @@ impl<'a> Attrs<'a> {
         Ok(())
     }
 }
+
+pub fn check_tag_uniqueness(tag: &Tag, tags: &mut Vec<u32>) -> Result<()> {
+    if tags.iter().any(|t| *t == tag.tag) {
+        return Err(Error::new_spanned(
+            tag.original,
+            "tag values must not be duplicate",
+        ));
+    }
+    tags.push(tag.tag);
+    Ok(())
+}

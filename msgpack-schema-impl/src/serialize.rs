@@ -67,12 +67,14 @@ fn derive_struct(
 
     let fn_body = {
         let mut members = vec![];
+        let mut tags = vec![];
         for field in &named_fields.named {
             let ident = field.ident.clone().unwrap();
             let attrs = attr::get(&field.attrs)?;
             attrs.disallow_untagged()?;
             attrs.require_tag(field)?;
-            let tag = attrs.tag.unwrap().tag.clone();
+            attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
+            let tag = attrs.tag.unwrap().tag;
             // TODO: require `#[required]` or `#[optional]` for fields of the Option<T> type
             let opt = attrs.optional.is_some();
             members.push((ident, tag, opt));
@@ -164,13 +166,15 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
 
     let fn_body = {
         let mut clauses = vec![];
+        let mut tags = vec![];
         for variant in &enu.variants {
             let ident = variant.ident.clone();
             let attrs = attr::get(&variant.attrs)?;
             attrs.disallow_optional()?;
             attrs.disallow_untagged()?;
             attrs.require_tag(variant)?;
-            let tag = attrs.tag.unwrap().tag.clone();
+            attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
+            let tag = attrs.tag.unwrap().tag;
             match &variant.fields {
                 Fields::Named(_) => {
                     return Err(Error::new_spanned(

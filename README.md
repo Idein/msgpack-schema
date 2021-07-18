@@ -397,7 +397,6 @@ E::Bar(42)
 - nonempty tuple structs
 - tuple variants
 - variants with named fields
-- check duplicated tags
 - `#[required]`
 
 #### License
