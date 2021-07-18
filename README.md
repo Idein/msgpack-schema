@@ -399,7 +399,6 @@ E::Bar(42)
 - variants with named fields
 - check duplicated tags
 - `#[required]`
-- untagged variants may not have `#[tag]`
 
 #### License
 
