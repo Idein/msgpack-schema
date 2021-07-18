@@ -7,6 +7,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     let attrs = attr::get(&node.attrs)?;
     attrs.disallow_optional()?;
     attrs.disallow_tag()?;
+    attrs.disallow_flatten()?;
     match &node.data {
         Data::Struct(strut) => match &strut.fields {
             Fields::Named(fields) => {
@@ -65,56 +66,98 @@ fn derive_struct(
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
 
-    let fn_body = {
-        let mut members = vec![];
+    enum FieldKind {
+        Ordinary(u32),
+        Optional(u32),
+        Flatten,
+    }
+
+    let fields = {
+        let mut fields = vec![];
         let mut tags = vec![];
         for field in &named_fields.named {
             let ident = field.ident.clone().unwrap();
+            let ty = field.ty.clone();
             let attrs = attr::get(&field.attrs)?;
             attrs.disallow_untagged()?;
-            attrs.require_tag(field)?;
-            attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
-            let tag = attrs.tag.unwrap().tag;
-            // TODO: require `#[required]` or `#[optional]` for fields of the Option<T> type
-            let opt = attrs.optional.is_some();
-            members.push((ident, tag, opt));
+            let kind = if attrs.flatten.is_some() {
+                attrs.disallow_tag()?;
+                attrs.disallow_optional()?;
+                FieldKind::Flatten
+            } else {
+                attrs.require_tag(field)?;
+                attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
+                let tag = attrs.tag.unwrap().tag;
+                // TODO: require `#[required]` or `#[optional]` for fields of the Option<T> type
+                if attrs.optional.is_some() {
+                    FieldKind::Optional(tag)
+                } else {
+                    FieldKind::Ordinary(tag)
+                }
+            };
+            fields.push((ident, ty, kind));
         }
+        fields
+    };
 
+    let count_fields_body = {
         let max_len = named_fields.named.len() as u32;
 
         let mut decs = vec![];
-        for (ident, _tag, opt) in &members {
-            if *opt {
-                decs.push(quote! {
-                    if self.#ident.is_none() {
+        for (ident, ty, kind) in &fields {
+            match kind {
+                FieldKind::Flatten => {
+                    decs.push(quote! {
                         max_len -= 1;
-                    }
-                })
-            };
-        }
-
-        let mut pushes = vec![];
-        for (ident, tag, opt) in &members {
-            let push = if *opt {
-                quote! {
-                    if let Some(value) = &self.#ident {
-                        serializer.serialize(#tag);
-                        serializer.serialize(value);
-                    }
+                        max_len += <#ty as ::msgpack_schema::StructSerialize>::count_fields(&self.#ident);
+                    });
                 }
-            } else {
-                quote! {
-                    serializer.serialize(#tag);
-                    serializer.serialize(&self.#ident);
+                FieldKind::Optional(_) => {
+                    decs.push(quote! {
+                        if self.#ident.is_none() {
+                            max_len -= 1;
+                        }
+                    });
                 }
-            };
-            pushes.push(push);
+                FieldKind::Ordinary(_) => {}
+            }
         }
 
         quote! {
             let mut max_len: u32 = #max_len;
             #( #decs )*
-            serializer.serialize_map(max_len);
+            max_len
+        }
+    };
+
+    let serialize_fields_body = {
+        let mut pushes = vec![];
+        for (ident, ty, kind) in &fields {
+            let code = match kind {
+                FieldKind::Ordinary(tag) => {
+                    quote! {
+                        serializer.serialize(#tag);
+                        serializer.serialize(&self.#ident);
+                    }
+                }
+                FieldKind::Optional(tag) => {
+                    quote! {
+                        if let Some(value) = &self.#ident {
+                            serializer.serialize(#tag);
+                            serializer.serialize(value);
+                        }
+                    }
+                }
+                FieldKind::Flatten => {
+                    quote! {
+                        <#ty as ::msgpack_schema::StructSerialize>::serialize_fields(&self.#ident, serializer);
+                    }
+                }
+            };
+            pushes.push(code);
+        }
+
+        quote! {
             #( #pushes )*
         }
     };
@@ -123,7 +166,20 @@ fn derive_struct(
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
             fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
-                #fn_body
+                let count = <Self as ::msgpack_schema::StructSerialize>::count_fields(self);
+                serializer.serialize_map(count);
+                <Self as ::msgpack_schema::StructSerialize>::serialize_fields(self, serializer);
+            }
+        }
+
+        #[allow(unused_qualifications)]
+        impl #impl_generics ::msgpack_schema::StructSerialize for #ty #ty_generics #where_clause {
+            fn count_fields(&self) -> u32 {
+                #count_fields_body
+            }
+
+            fn serialize_fields(&self, serializer: &mut ::msgpack_schema::Serializer) {
+                #serialize_fields_body
             }
         }
     };
@@ -143,6 +199,7 @@ fn derive_newtype_struct(
     attrs.disallow_tag()?;
     attrs.disallow_optional()?;
     attrs.disallow_untagged()?;
+    attrs.disallow_flatten()?;
 
     let fn_body = quote! {
         serializer.serialize(&self.0);
@@ -172,6 +229,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
             let attrs = attr::get(&variant.attrs)?;
             attrs.disallow_optional()?;
             attrs.disallow_untagged()?;
+            attrs.disallow_flatten()?;
             attrs.require_tag(variant)?;
             attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
             let tag = attrs.tag.unwrap().tag;
@@ -197,6 +255,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             attrs.disallow_optional()?;
                             attrs.disallow_tag()?;
                             attrs.disallow_untagged()?;
+                            attrs.disallow_flatten()?;
                             clauses.push(quote! {
                                 Self::#ident(value) => {
                                     serializer.serialize_array(2);
@@ -253,6 +312,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             attrs.disallow_optional()?;
             attrs.disallow_tag()?;
             attrs.disallow_untagged()?;
+            attrs.disallow_flatten()?;
             match &variant.fields {
                 Fields::Named(_) => {
                     return Err(Error::new_spanned(
@@ -272,6 +332,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
                         attrs.disallow_optional()?;
                         attrs.disallow_tag()?;
                         attrs.disallow_untagged()?;
+                        attrs.disallow_flatten()?;
                         members.push((variant, &fields.unnamed[0]));
                     }
                     _ => {
@@ -335,6 +396,7 @@ fn derive_untagged_struct(
             attrs.disallow_tag()?;
             attrs.disallow_optional()?;
             attrs.disallow_untagged()?;
+            attrs.disallow_flatten()?;
             members.push(ident);
         }
 

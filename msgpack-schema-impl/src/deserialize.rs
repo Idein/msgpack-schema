@@ -7,6 +7,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     let attrs = attr::get(&node.attrs)?;
     attrs.disallow_optional()?;
     attrs.disallow_tag()?;
+    attrs.disallow_flatten()?;
     match &node.data {
         Data::Struct(strut) => match &strut.fields {
             Fields::Named(fields) => {
@@ -65,68 +66,104 @@ fn derive_struct(
     let ty = &node.ident;
     let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
 
-    let fn_body = {
-        let mut members = vec![];
+    enum FieldKind {
+        Ordinary(u32),
+        Optional(u32),
+        Flatten,
+    }
+
+    let fields = {
+        let mut fields = vec![];
         let mut tags = vec![];
         for field in &named_fields.named {
             let ident = field.ident.clone().unwrap();
+            let ty = field.ty.clone();
             let attrs = attr::get(&field.attrs)?;
             attrs.disallow_untagged()?;
-            attrs.require_tag(field)?;
-            attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
-            let tag = attrs.tag.unwrap().tag;
-            let opt = attrs.optional.is_some();
-            let ty = field.ty.clone();
-            members.push((ident, tag, opt, ty))
-        }
-
-        let mut init = vec![];
-        for (ident, _tag, opt, ty) in &members {
-            let push = if *opt {
-                quote! {
-                    let mut #ident: #ty = None;
-                }
+            let kind = if attrs.flatten.is_some() {
+                attrs.disallow_tag()?;
+                attrs.disallow_optional()?;
+                FieldKind::Flatten
             } else {
-                quote! {
-                    let mut #ident: ::std::option::Option<#ty> = None;
+                attrs.require_tag(field)?;
+                attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
+                let tag = attrs.tag.unwrap().tag;
+                // TODO: require `#[required]` or `#[optional]` for fields of the Option<T> type
+                if attrs.optional.is_some() {
+                    FieldKind::Optional(tag)
+                } else {
+                    FieldKind::Ordinary(tag)
                 }
             };
-            init.push(push);
+            fields.push((ident, ty, kind));
+        }
+        fields
+    };
+
+    let fn_body = {
+        let mut init = vec![];
+        for (ident, ty, kind) in &fields {
+            let code = match kind {
+                FieldKind::Ordinary(_) => {
+                    quote! {
+                        let mut #ident: ::std::option::Option<#ty> = None;
+                    }
+                }
+                FieldKind::Optional(_) => {
+                    quote! {
+                        let mut #ident: #ty = None;
+                    }
+                }
+                FieldKind::Flatten => {
+                    quote! {
+                        let #ident: #ty = __deserializer.clone().deserialize()?;
+                    }
+                }
+            };
+            init.push(code);
         }
 
         let mut filters = vec![];
-        for (ident, tag, _opt, _ty) in &members {
-            filters.push(quote! {
-                #tag => {
-                    if #ident.is_some() {
-                        return Err(::msgpack_schema::InvalidInputError.into());
-                    }
-                    #ident = Some(__deserializer.deserialize()?);
+        for (ident, _, kind) in &fields {
+            match kind {
+                FieldKind::Ordinary(tag) | FieldKind::Optional(tag) => {
+                    filters.push(quote! {
+                        #tag => {
+                            if #ident.is_some() {
+                                return Err(::msgpack_schema::InvalidInputError.into());
+                            }
+                            #ident = Some(__deserializer.deserialize()?);
+                        }
+                    });
                 }
-            });
+                FieldKind::Flatten => {}
+            }
         }
 
         let mut ctors = vec![];
-        for (ident, _tag, opt, _ty) in &members {
-            let push = if *opt {
-                quote! {
-                    #ident,
+        for (ident, _, kind) in &fields {
+            let code = match kind {
+                FieldKind::Ordinary(_) => {
+                    quote! {
+                        #ident: #ident.ok_or(::msgpack_schema::ValidationError)?,
+                    }
                 }
-            } else {
-                quote! {
-                    #ident: #ident.ok_or(::msgpack_schema::ValidationError)?,
+                FieldKind::Optional(_) | FieldKind::Flatten => {
+                    quote! {
+                        #ident,
+                    }
                 }
             };
-            ctors.push(push);
+            ctors.push(code);
         }
 
         quote! {
+            #( #init )*
+
             let __len = match __deserializer.deserialize_token()? {
                 ::msgpack_schema::Token::Map(len) => len,
                 _ => return Err(::msgpack_schema::ValidationError.into()),
             };
-
-            #( #init )*
             for _ in 0..__len {
                 let __tag: u32 = __deserializer.deserialize()?;
                 match __tag {
@@ -166,6 +203,7 @@ fn derive_newtype_struct(
     attrs.disallow_tag()?;
     attrs.disallow_optional()?;
     attrs.disallow_untagged()?;
+    attrs.disallow_flatten()?;
 
     let fn_body = quote! {
         __deserializer.deserialize().map(Self)
@@ -195,6 +233,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
             let attrs = attr::get(&variant.attrs)?;
             attrs.disallow_optional()?;
             attrs.disallow_untagged()?;
+            attrs.disallow_flatten()?;
             attrs.require_tag(variant)?;
             attr::check_tag_uniqueness(attrs.tag.as_ref().unwrap(), &mut tags)?;
             let tag = attrs.tag.unwrap().tag;
@@ -223,6 +262,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             attrs.disallow_optional()?;
                             attrs.disallow_tag()?;
                             attrs.disallow_untagged()?;
+                            attrs.disallow_flatten()?;
                             clauses.push(quote! {
                                 #tag => {
                                     if !__is_array {
@@ -295,6 +335,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             attrs.disallow_optional()?;
             attrs.disallow_tag()?;
             attrs.disallow_untagged()?;
+            attrs.disallow_flatten()?;
             match &variant.fields {
                 Fields::Named(_) => {
                     return Err(Error::new_spanned(
@@ -314,6 +355,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
                         attrs.disallow_optional()?;
                         attrs.disallow_tag()?;
                         attrs.disallow_untagged()?;
+                        attrs.disallow_flatten()?;
                         members.push((variant, &fields.unnamed[0]));
                     }
                     _ => {
@@ -376,6 +418,7 @@ fn derive_untagged_struct(
             attrs.disallow_tag()?;
             attrs.disallow_optional()?;
             attrs.disallow_untagged()?;
+            attrs.disallow_flatten()?;
             let ident = field.ident.clone().unwrap();
             let ty = field.ty.clone();
             members.push((ident, ty))

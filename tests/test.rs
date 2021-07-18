@@ -423,3 +423,62 @@ fn serialize_struct_tag_schema() {
         ])
     );
 }
+
+#[test]
+fn serialize_struct_flatten() {
+    #[derive(Serialize)]
+    struct S1 {
+        #[tag = 1]
+        x: u32,
+    }
+
+    #[derive(Serialize)]
+    struct S2 {
+        #[tag = 2]
+        x: u32,
+        #[flatten]
+        s1: S1,
+    }
+
+    let val = S2 {
+        x: 42,
+        s1: S1 { x: 43 },
+    };
+    assert_eq!(
+        value::serialize(&val),
+        Value::Map(vec![
+            (Value::Int(2.into()), Value::Int(42.into())),
+            (Value::Int(1.into()), Value::Int(43.into()))
+        ])
+    );
+}
+
+#[test]
+fn deserialize_struct_flatten() {
+    #[derive(Deserialize, PartialEq, Eq, Debug)]
+    struct S1 {
+        #[tag = 1]
+        x: u32,
+    }
+
+    #[derive(Deserialize, PartialEq, Eq, Debug)]
+    struct S2 {
+        #[tag = 2]
+        x: u32,
+        #[flatten]
+        s1: S1,
+    }
+
+    let val = S2 {
+        x: 42,
+        s1: S1 { x: 43 },
+    };
+    assert_eq!(
+        val,
+        value::deserialize(Value::Map(vec![
+            (Value::Int(2.into()), Value::Int(42.into())),
+            (Value::Int(1.into()), Value::Int(43.into()))
+        ]))
+        .unwrap()
+    );
+}

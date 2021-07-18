@@ -16,6 +16,12 @@ mod serialize {
     }
 
     #[derive(Serialize)]
+    enum E12 {
+        #[flatten]
+        V1,
+    }
+
+    #[derive(Serialize)]
     enum E3 {
         #[tag = 1]
         V1(#[untagged] String),
@@ -31,6 +37,12 @@ mod serialize {
     enum E5 {
         #[tag = 1]
         V1(#[tag = 1] String),
+    }
+
+    #[derive(Serialize)]
+    enum E13 {
+        #[tag = 1]
+        V1(#[flatten] String),
     }
 
     #[derive(Serialize)]
@@ -56,6 +68,13 @@ mod serialize {
 
     #[derive(Serialize)]
     #[untagged]
+    enum E14 {
+        #[flatten]
+        V1,
+    }
+
+    #[derive(Serialize)]
+    #[untagged]
     enum E9 {
         V1(#[untagged] String),
     }
@@ -70,6 +89,12 @@ mod serialize {
     #[untagged]
     enum E11 {
         V1(#[tag = 1] String),
+    }
+
+    #[derive(Serialize)]
+    #[untagged]
+    enum E15 {
+        V1(#[flatten] String),
     }
 }
 
@@ -89,6 +114,12 @@ mod deserialize {
     }
 
     #[derive(Deserialize)]
+    enum E12 {
+        #[flatten]
+        V1,
+    }
+
+    #[derive(Deserialize)]
     enum E3 {
         #[tag = 1]
         V1(#[untagged] String),
@@ -104,6 +135,12 @@ mod deserialize {
     enum E5 {
         #[tag = 1]
         V1(#[tag = 1] String),
+    }
+
+    #[derive(Deserialize)]
+    enum E13 {
+        #[tag = 1]
+        V1(#[flatten] String),
     }
 
     #[derive(Deserialize)]
@@ -129,6 +166,13 @@ mod deserialize {
 
     #[derive(Deserialize)]
     #[untagged]
+    enum E14 {
+        #[flatten]
+        V1,
+    }
+
+    #[derive(Deserialize)]
+    #[untagged]
     enum E9 {
         V1(#[untagged] String),
     }
@@ -143,6 +187,12 @@ mod deserialize {
     #[untagged]
     enum E11 {
         V1(#[tag = 1] String),
+    }
+
+    #[derive(Deserialize)]
+    #[untagged]
+    enum E15 {
+        V1(#[flatten] String),
     }
 }
 

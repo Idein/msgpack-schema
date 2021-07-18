@@ -10,122 +10,170 @@ error: #[untagged] at an invalid position
 14 |         #[untagged]
    |         ^^^^^^^^^^^
 
-error: #[untagged] at an invalid position
-  --> $DIR/variant.rs:21:12
+error: #[flatten] at an invalid position
+  --> $DIR/variant.rs:20:9
    |
-21 |         V1(#[untagged] String),
-   |            ^^^^^^^^^^^
-
-error: #[optional] at an invalid position
-  --> $DIR/variant.rs:27:12
-   |
-27 |         V1(#[optional] String),
-   |            ^^^^^^^^^^^
-
-error: #[tag] at an invalid position
-  --> $DIR/variant.rs:33:12
-   |
-33 |         V1(#[tag = 1] String),
-   |            ^^^^^^^^^^
-
-error: #[optional] at an invalid position
-  --> $DIR/variant.rs:39:9
-   |
-39 |         #[optional]
-   |         ^^^^^^^^^^^
-
-error: #[untagged] at an invalid position
-  --> $DIR/variant.rs:46:9
-   |
-46 |         #[untagged]
-   |         ^^^^^^^^^^^
-
-error: #[tag] at an invalid position
-  --> $DIR/variant.rs:53:9
-   |
-53 |         #[tag = 1]
+20 |         #[flatten]
    |         ^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/variant.rs:60:12
+  --> $DIR/variant.rs:27:12
    |
-60 |         V1(#[untagged] String),
+27 |         V1(#[untagged] String),
    |            ^^^^^^^^^^^
 
 error: #[optional] at an invalid position
-  --> $DIR/variant.rs:66:12
+  --> $DIR/variant.rs:33:12
    |
-66 |         V1(#[optional] String),
+33 |         V1(#[optional] String),
    |            ^^^^^^^^^^^
 
 error: #[tag] at an invalid position
-  --> $DIR/variant.rs:72:12
+  --> $DIR/variant.rs:39:12
    |
-72 |         V1(#[tag = 1] String),
+39 |         V1(#[tag = 1] String),
+   |            ^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+  --> $DIR/variant.rs:45:12
+   |
+45 |         V1(#[flatten] String),
    |            ^^^^^^^^^^
 
 error: #[optional] at an invalid position
-  --> $DIR/variant.rs:81:9
+  --> $DIR/variant.rs:51:9
    |
-81 |         #[optional]
+51 |         #[optional]
    |         ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/variant.rs:87:9
+  --> $DIR/variant.rs:58:9
    |
-87 |         #[untagged]
+58 |         #[untagged]
    |         ^^^^^^^^^^^
 
-error: #[untagged] at an invalid position
-  --> $DIR/variant.rs:94:12
+error: #[tag] at an invalid position
+  --> $DIR/variant.rs:65:9
    |
-94 |         V1(#[untagged] String),
+65 |         #[tag = 1]
+   |         ^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+  --> $DIR/variant.rs:72:9
+   |
+72 |         #[flatten]
+   |         ^^^^^^^^^^
+
+error: #[untagged] at an invalid position
+  --> $DIR/variant.rs:79:12
+   |
+79 |         V1(#[untagged] String),
    |            ^^^^^^^^^^^
 
 error: #[optional] at an invalid position
-   --> $DIR/variant.rs:100:12
-    |
-100 |         V1(#[optional] String),
-    |            ^^^^^^^^^^^
+  --> $DIR/variant.rs:85:12
+   |
+85 |         V1(#[optional] String),
+   |            ^^^^^^^^^^^
 
 error: #[tag] at an invalid position
-   --> $DIR/variant.rs:106:12
-    |
-106 |         V1(#[tag = 1] String),
-    |            ^^^^^^^^^^
+  --> $DIR/variant.rs:91:12
+   |
+91 |         V1(#[tag = 1] String),
+   |            ^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+  --> $DIR/variant.rs:97:12
+   |
+97 |         V1(#[flatten] String),
+   |            ^^^^^^^^^^
 
 error: #[optional] at an invalid position
-   --> $DIR/variant.rs:112:9
+   --> $DIR/variant.rs:106:9
     |
-112 |         #[optional]
+106 |         #[optional]
     |         ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-   --> $DIR/variant.rs:119:9
+   --> $DIR/variant.rs:112:9
     |
-119 |         #[untagged]
+112 |         #[untagged]
     |         ^^^^^^^^^^^
 
-error: #[tag] at an invalid position
-   --> $DIR/variant.rs:126:9
+error: #[flatten] at an invalid position
+   --> $DIR/variant.rs:118:9
     |
-126 |         #[tag = 1]
+118 |         #[flatten]
     |         ^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-   --> $DIR/variant.rs:133:12
+   --> $DIR/variant.rs:125:12
     |
-133 |         V1(#[untagged] String),
+125 |         V1(#[untagged] String),
     |            ^^^^^^^^^^^
 
 error: #[optional] at an invalid position
-   --> $DIR/variant.rs:139:12
+   --> $DIR/variant.rs:131:12
     |
-139 |         V1(#[optional] String),
+131 |         V1(#[optional] String),
     |            ^^^^^^^^^^^
 
 error: #[tag] at an invalid position
-   --> $DIR/variant.rs:145:12
+   --> $DIR/variant.rs:137:12
     |
-145 |         V1(#[tag = 1] String),
+137 |         V1(#[tag = 1] String),
+    |            ^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+   --> $DIR/variant.rs:143:12
+    |
+143 |         V1(#[flatten] String),
+    |            ^^^^^^^^^^
+
+error: #[optional] at an invalid position
+   --> $DIR/variant.rs:149:9
+    |
+149 |         #[optional]
+    |         ^^^^^^^^^^^
+
+error: #[untagged] at an invalid position
+   --> $DIR/variant.rs:156:9
+    |
+156 |         #[untagged]
+    |         ^^^^^^^^^^^
+
+error: #[tag] at an invalid position
+   --> $DIR/variant.rs:163:9
+    |
+163 |         #[tag = 1]
+    |         ^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+   --> $DIR/variant.rs:170:9
+    |
+170 |         #[flatten]
+    |         ^^^^^^^^^^
+
+error: #[untagged] at an invalid position
+   --> $DIR/variant.rs:177:12
+    |
+177 |         V1(#[untagged] String),
+    |            ^^^^^^^^^^^
+
+error: #[optional] at an invalid position
+   --> $DIR/variant.rs:183:12
+    |
+183 |         V1(#[optional] String),
+    |            ^^^^^^^^^^^
+
+error: #[tag] at an invalid position
+   --> $DIR/variant.rs:189:12
+    |
+189 |         V1(#[tag = 1] String),
+    |            ^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+   --> $DIR/variant.rs:195:12
+    |
+195 |         V1(#[flatten] String),
     |            ^^^^^^^^^^

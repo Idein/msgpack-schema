@@ -12,7 +12,7 @@ mod serialize {
     }
 
     #[derive(Serialize)]
-    struct S3 {
+    struct S2 {
         #[tag = 1]
         #[tag = 2]
         x: String,
@@ -21,7 +21,14 @@ mod serialize {
     #[derive(Serialize)]
     #[untagged]
     #[untagged]
-    struct S5 {}
+    struct S3 {}
+
+    #[derive(Serialize)]
+    struct S4 {
+        #[flatten]
+        #[flatten]
+        x: S2,
+    }
 }
 
 mod deserialize {
@@ -46,6 +53,13 @@ mod deserialize {
     #[untagged]
     #[untagged]
     struct S3 {}
+
+    #[derive(Deserialize)]
+    struct S4 {
+        #[flatten]
+        #[flatten]
+        x: S2,
+    }
 }
 
 fn main() {}

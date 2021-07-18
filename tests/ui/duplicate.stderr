@@ -16,20 +16,32 @@ error: duplicate #[untagged] attribute
 23 |     #[untagged]
    |     ^^^^^^^^^^^
 
-error: duplicate #[optional] attribute
-  --> $DIR/duplicate.rs:33:9
+error: duplicate #[flatten] attribute
+  --> $DIR/duplicate.rs:29:9
    |
-33 |         #[optional]
+29 |         #[flatten]
+   |         ^^^^^^^^^^
+
+error: duplicate #[optional] attribute
+  --> $DIR/duplicate.rs:40:9
+   |
+40 |         #[optional]
    |         ^^^^^^^^^^^
 
 error: duplicate #[tag] attribute
-  --> $DIR/duplicate.rs:41:9
+  --> $DIR/duplicate.rs:48:9
    |
-41 |         #[tag = 2]
+48 |         #[tag = 2]
    |         ^^^^^^^^^^
 
 error: duplicate #[untagged] attribute
-  --> $DIR/duplicate.rs:47:5
+  --> $DIR/duplicate.rs:54:5
    |
-47 |     #[untagged]
+54 |     #[untagged]
    |     ^^^^^^^^^^^
+
+error: duplicate #[flatten] attribute
+  --> $DIR/duplicate.rs:60:9
+   |
+60 |         #[flatten]
+   |         ^^^^^^^^^^

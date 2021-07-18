@@ -8,6 +8,7 @@ pub struct Attrs<'a> {
     pub tag: Option<Tag<'a>>,
     pub optional: Option<Optional<'a>>,
     pub untagged: Option<Untagged<'a>>,
+    pub flatten: Option<Flatten<'a>>,
 }
 
 #[derive(Clone)]
@@ -26,11 +27,17 @@ pub struct Untagged<'a> {
     pub original: &'a Attribute,
 }
 
+#[derive(Clone)]
+pub struct Flatten<'a> {
+    pub original: &'a Attribute,
+}
+
 pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
     let mut output = Attrs {
         tag: None,
         optional: None,
         untagged: None,
+        flatten: None,
     };
 
     for attr in attrs {
@@ -63,6 +70,12 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
                 return Err(Error::new_spanned(attr, "duplicate #[optional] attribute"));
             }
             output.optional = Some(Optional { original: attr });
+        } else if attr.path.is_ident("flatten") {
+            require_empty_attribute(attr)?;
+            if output.flatten.is_some() {
+                return Err(Error::new_spanned(attr, "duplicate #[flatten] attribute"));
+            }
+            output.flatten = Some(Flatten { original: attr });
         }
     }
     Ok(output)
@@ -72,6 +85,7 @@ fn parse_schema_attribute<'a>(output: &mut Attrs<'a>, attr: &'a Attribute) -> Re
     syn::custom_keyword!(optional);
     syn::custom_keyword!(tag);
     syn::custom_keyword!(untagged);
+    syn::custom_keyword!(flatten);
 
     attr.parse_args_with(|input: ParseStream| {
         if let Some(_kw) = input.parse::<Option<optional>>()? {
@@ -85,6 +99,12 @@ fn parse_schema_attribute<'a>(output: &mut Attrs<'a>, attr: &'a Attribute) -> Re
                 return Err(Error::new_spanned(attr, "duplicate #[untagged] attribute"));
             }
             output.untagged = Some(Untagged { original: attr });
+            return Ok(());
+        } else if let Some(_kw) = input.parse::<Option<flatten>>()? {
+            if output.flatten.is_some() {
+                return Err(Error::new_spanned(attr, "duplicate #[flatten] attribute"));
+            }
+            output.flatten = Some(Flatten { original: attr });
             return Ok(());
         } else if let Some(_kw) = input.parse::<Option<tag>>()? {
             let _eq_token: Token![=] = input.parse()?;
@@ -143,6 +163,16 @@ impl<'a> Attrs<'a> {
             return Err(Error::new_spanned(
                 untagged.original,
                 "#[untagged] at an invalid position",
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn disallow_flatten(&self) -> Result<()> {
+        if let Some(flatten) = &self.flatten {
+            return Err(Error::new_spanned(
+                flatten.original,
+                "#[flatten] at an invalid position",
             ));
         }
         Ok(())

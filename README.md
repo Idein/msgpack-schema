@@ -77,6 +77,35 @@ Fields in named structs may be tagged with `#[optional]`.
 - On serialization, the key-value pair will not be included in the result map object when the field data contains `None`.
 - On deserialization, the field of the result struct will be filled with `None` when the given MsgPack map object contains no corresponding key-value pair.
 
+The `#[flatten]` attribute is used to factor out a single definition of named struct into multiple ones.
+
+```rust
+# use msgpack_schema::*;
+#[derive(Serialize)]
+struct S1 {
+    #[tag = 1]
+    x: u32,
+}
+
+#[derive(Serialize)]
+struct S2 {
+    #[flatten]
+    s1: S1,
+    #[tag = 2]
+    y: u32,
+}
+
+#[derive(Serialize)]
+struct S3 {
+    #[tag = 1]
+    x: u32,
+    #[tag = 2]
+    y: u32,
+}
+
+assert_eq!(serialize(S2 { s1: S1 { x: 42 }, y: 43, }), serialize(S3 { x: 42, y: 43 }));
+```
+
 ### Untagged structs with named fields
 
 Structs with named fields may be attached `#[untagged]`.

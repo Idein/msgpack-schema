@@ -16,6 +16,12 @@ mod serialize {
     }
 
     #[derive(Serialize)]
+    #[flatten]
+    struct S5 {
+        x: String,
+    }
+
+    #[derive(Serialize)]
     #[untagged]
     struct S3(String);
 
@@ -36,6 +42,12 @@ mod deserialize {
     #[derive(Deserialize)]
     #[optional]
     struct S2 {
+        x: String,
+    }
+
+    #[derive(Deserialize)]
+    #[flatten]
+    struct S5 {
         x: String,
     }
 
