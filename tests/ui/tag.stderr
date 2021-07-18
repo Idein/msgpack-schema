@@ -1,47 +1,23 @@
 error: no #[tag] given
- --> $DIR/tag.rs:7:5
+ --> $DIR/tag.rs:5:5
   |
-7 |     name: String,
-  |     ^^^^^^^^^^^^
+5 |     x: String,
+  |     ^^^^^^^^^
 
 error: no #[tag] given
-  --> $DIR/tag.rs:14:5
+  --> $DIR/tag.rs:10:5
    |
-14 |     name: String,
-   |     ^^^^^^^^^^^^
+10 |     x: String,
+   |     ^^^^^^^^^
 
-error: duplicate #[tag] attribute
+error: no #[tag] given
+  --> $DIR/tag.rs:15:5
+   |
+15 |     V,
+   |     ^
+
+error: no #[tag] given
   --> $DIR/tag.rs:20:5
    |
-20 |     #[tag = 1]
-   |     ^^^^^^^^^^
-
-error: duplicate #[tag] attribute
-  --> $DIR/tag.rs:27:5
-   |
-27 |     #[tag = 1]
-   |     ^^^^^^^^^^
-
-error: no #[tag] given
-  --> $DIR/tag.rs:36:5
-   |
-36 |     Dog,
-   |     ^^^
-
-error: no #[tag] given
-  --> $DIR/tag.rs:43:5
-   |
-43 |     Dog,
-   |     ^^^
-
-error: duplicate #[tag] attribute
-  --> $DIR/tag.rs:49:5
-   |
-49 |     #[tag = 1]
-   |     ^^^^^^^^^^
-
-error: duplicate #[tag] attribute
-  --> $DIR/tag.rs:57:5
-   |
-57 |     #[tag = 1]
-   |     ^^^^^^^^^^
+20 |     V,
+   |     ^
