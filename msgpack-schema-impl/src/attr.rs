@@ -6,14 +6,24 @@ use syn::{
 
 pub struct Attrs<'a> {
     pub tag: Option<Tag<'a>>,
-    pub optional: Option<&'a Attribute>,
-    pub untagged: Option<&'a Attribute>,
+    pub optional: Option<Optional<'a>>,
+    pub untagged: Option<Untagged<'a>>,
 }
 
 #[derive(Clone)]
 pub struct Tag<'a> {
     pub original: &'a Attribute,
     pub tag: LitInt,
+}
+
+#[derive(Clone)]
+pub struct Optional<'a> {
+    pub original: &'a Attribute,
+}
+
+#[derive(Clone)]
+pub struct Untagged<'a> {
+    pub original: &'a Attribute,
 }
 
 pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
@@ -24,7 +34,9 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
     };
 
     for attr in attrs {
-        if attr.path.is_ident("tag") {
+        if attr.path.is_ident("schema") {
+            parse_schema_attribute(&mut output, attr)?;
+        } else if attr.path.is_ident("tag") {
             let parser = |input: ParseStream| {
                 let _eq_token: Token![=] = input.parse()?;
                 let lit_int: LitInt = input.parse()?;
@@ -43,16 +55,58 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
             if output.untagged.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[untagged] attribute"));
             }
-            output.untagged = Some(attr);
+            output.untagged = Some(Untagged { original: attr });
         } else if attr.path.is_ident("optional") {
             require_empty_attribute(attr)?;
             if output.optional.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[optional] attribute"));
             }
-            output.optional = Some(attr);
+            output.optional = Some(Optional { original: attr });
         }
     }
     Ok(output)
+}
+
+fn parse_schema_attribute<'a>(output: &mut Attrs<'a>, attr: &'a Attribute) -> Result<()> {
+    syn::custom_keyword!(optional);
+    syn::custom_keyword!(tag);
+    syn::custom_keyword!(untagged);
+
+    attr.parse_args_with(|input: ParseStream| {
+        if let Some(_kw) = input.parse::<Option<optional>>()? {
+            if output.optional.is_some() {
+                return Err(Error::new_spanned(attr, "duplicate #[optional] attribute"));
+            }
+            output.optional = Some(Optional { original: attr });
+            return Ok(());
+        } else if let Some(_kw) = input.parse::<Option<untagged>>()? {
+            if output.untagged.is_some() {
+                return Err(Error::new_spanned(attr, "duplicate #[untagged] attribute"));
+            }
+            output.untagged = Some(Untagged { original: attr });
+            return Ok(());
+        } else if let Some(_kw) = input.parse::<Option<tag>>()? {
+            let _eq_token: Token![=] = input.parse()?;
+            let lit_int: LitInt = input.parse()?;
+            if output.tag.is_some() {
+                return Err(Error::new_spanned(attr, "duplicate #[tag] attribute"));
+            }
+            output.tag = Some(Tag {
+                original: attr,
+                tag: lit_int,
+            });
+            return Ok(());
+        }
+        let lit_int: LitInt = input.parse()?;
+        if output.tag.is_some() {
+            return Err(Error::new_spanned(attr, "duplicate #[tag] attribute"));
+        }
+        output.tag = Some(Tag {
+            original: attr,
+            tag: lit_int,
+        });
+        Ok(())
+    })
 }
 
 fn require_empty_attribute(attr: &Attribute) -> Result<()> {
@@ -72,9 +126,9 @@ impl<'a> Attrs<'a> {
     }
 
     pub fn disallow_optional(&self) -> Result<()> {
-        if let Some(original) = self.optional {
+        if let Some(optional) = &self.optional {
             return Err(Error::new_spanned(
-                original,
+                optional.original,
                 "#[optional] at an invalid position",
             ));
         }
@@ -82,9 +136,9 @@ impl<'a> Attrs<'a> {
     }
 
     pub fn disallow_untagged(&self) -> Result<()> {
-        if let Some(original) = self.untagged {
+        if let Some(untagged) = &self.untagged {
             return Err(Error::new_spanned(
-                original,
+                untagged.original,
                 "#[untagged] at an invalid position",
             ));
         }

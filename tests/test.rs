@@ -400,3 +400,26 @@ proptest! {
         assert_eq!(v, msgpack_schema::deserialize(buf.as_slice()).unwrap());
     }
 }
+
+#[test]
+fn serialize_struct_tag_schema() {
+    #[derive(Serialize)]
+    struct Human {
+        #[schema(0)]
+        age: u32,
+        #[schema(2)]
+        name: String,
+    }
+
+    let val = Human {
+        age: 42,
+        name: "John".into(),
+    };
+    assert_eq!(
+        value::serialize(&val),
+        Value::Map(vec![
+            (Value::Int(0.into()), Value::Int(42.into())),
+            (Value::Int(2.into()), Value::Str("John".to_owned().into()))
+        ])
+    );
+}
