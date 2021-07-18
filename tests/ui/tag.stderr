@@ -1,23 +1,23 @@
 error: no #[tag] given
- --> $DIR/tag.rs:5:5
+ --> $DIR/tag.rs:8:9
   |
-5 |     x: String,
-  |     ^^^^^^^^^
+8 |         x: String,
+  |         ^^^^^^^^^
 
 error: no #[tag] given
-  --> $DIR/tag.rs:10:5
+  --> $DIR/tag.rs:13:9
    |
-10 |     x: String,
-   |     ^^^^^^^^^
+13 |         V,
+   |         ^
 
 error: no #[tag] given
-  --> $DIR/tag.rs:15:5
+  --> $DIR/tag.rs:22:9
    |
-15 |     V,
-   |     ^
+22 |         x: String,
+   |         ^^^^^^^^^
 
 error: no #[tag] given
-  --> $DIR/tag.rs:20:5
+  --> $DIR/tag.rs:27:9
    |
-20 |     V,
-   |     ^
+27 |         V,
+   |         ^

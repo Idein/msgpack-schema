@@ -1,35 +1,35 @@
 error: duplicate #[optional] attribute
- --> $DIR/duplicate.rs:6:5
+ --> $DIR/duplicate.rs:9:9
   |
-6 |     #[optional]
-  |     ^^^^^^^^^^^
+9 |         #[optional]
+  |         ^^^^^^^^^^^
 
-error: duplicate #[optional] attribute
-  --> $DIR/duplicate.rs:14:5
+error: duplicate #[tag] attribute
+  --> $DIR/duplicate.rs:17:9
    |
-14 |     #[optional]
+17 |         #[tag = 2]
+   |         ^^^^^^^^^^
+
+error: duplicate #[untagged] attribute
+  --> $DIR/duplicate.rs:23:5
+   |
+23 |     #[untagged]
    |     ^^^^^^^^^^^
 
-error: duplicate #[tag] attribute
-  --> $DIR/duplicate.rs:22:5
+error: duplicate #[optional] attribute
+  --> $DIR/duplicate.rs:33:9
    |
-22 |     #[tag = 2]
-   |     ^^^^^^^^^^
+33 |         #[optional]
+   |         ^^^^^^^^^^^
 
 error: duplicate #[tag] attribute
-  --> $DIR/duplicate.rs:29:5
+  --> $DIR/duplicate.rs:41:9
    |
-29 |     #[tag = 2]
-   |     ^^^^^^^^^^
+41 |         #[tag = 2]
+   |         ^^^^^^^^^^
 
 error: duplicate #[untagged] attribute
-  --> $DIR/duplicate.rs:35:1
+  --> $DIR/duplicate.rs:47:5
    |
-35 | #[untagged]
-   | ^^^^^^^^^^^
-
-error: duplicate #[untagged] attribute
-  --> $DIR/duplicate.rs:40:1
-   |
-40 | #[untagged]
-   | ^^^^^^^^^^^
+47 |     #[untagged]
+   |     ^^^^^^^^^^^

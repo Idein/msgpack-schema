@@ -1,23 +1,31 @@
 use msgpack_schema::*;
 
-#[derive(Serialize)]
-struct S1 {
-    x: String,
+mod serialize {
+    use super::*;
+
+    #[derive(Serialize)]
+    struct S1 {
+        x: String,
+    }
+
+    #[derive(Serialize)]
+    enum E1 {
+        V,
+    }
 }
 
-#[derive(Deserialize)]
-struct S2 {
-    x: String,
-}
+mod deserialize {
+    use super::*;
 
-#[derive(Serialize)]
-enum E1 {
-    V,
-}
+    #[derive(Deserialize)]
+    struct S1 {
+        x: String,
+    }
 
-#[derive(Deserialize)]
-enum E2 {
-    V,
+    #[derive(Deserialize)]
+    enum E1 {
+        V,
+    }
 }
 
 fn main() {}

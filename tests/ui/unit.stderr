@@ -1,23 +1,23 @@
 error: unit structs as serialize are not supported
- --> $DIR/unit.rs:4:1
+ --> $DIR/unit.rs:7:5
   |
-4 | struct S1;
-  | ^^^^^^^^^^
-
-error: unit structs as deserialize are not supported
- --> $DIR/unit.rs:7:1
-  |
-7 | struct S2;
-  | ^^^^^^^^^^
+7 |     struct S1;
+  |     ^^^^^^^^^^
 
 error: empty tuple structs as serialize are not supported
-  --> $DIR/unit.rs:10:1
+  --> $DIR/unit.rs:10:5
    |
-10 | struct S3();
-   | ^^^^^^^^^^^^
+10 |     struct S3();
+   |     ^^^^^^^^^^^^
+
+error: unit structs as deserialize are not supported
+  --> $DIR/unit.rs:17:5
+   |
+17 |     struct S2;
+   |     ^^^^^^^^^^
 
 error: empty tuple structs as deserialize are not supported
-  --> $DIR/unit.rs:13:1
+  --> $DIR/unit.rs:20:5
    |
-13 | struct S4();
-   | ^^^^^^^^^^^^
+20 |     struct S4();
+   |     ^^^^^^^^^^^^

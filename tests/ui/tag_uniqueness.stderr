@@ -1,23 +1,23 @@
 error: tag values must not be duplicate
- --> $DIR/tag_uniqueness.rs:7:5
-  |
-7 |     #[tag = 0]
-  |     ^^^^^^^^^^
+  --> $DIR/tag_uniqueness.rs:10:9
+   |
+10 |         #[tag = 0]
+   |         ^^^^^^^^^^
 
 error: tag values must not be duplicate
-  --> $DIR/tag_uniqueness.rs:15:5
+  --> $DIR/tag_uniqueness.rs:18:9
    |
-15 |     #[tag = 0]
-   |     ^^^^^^^^^^
+18 |         #[tag = 0]
+   |         ^^^^^^^^^^
 
 error: tag values must not be duplicate
-  --> $DIR/tag_uniqueness.rs:23:5
+  --> $DIR/tag_uniqueness.rs:30:9
    |
-23 |     #[tag = 0]
-   |     ^^^^^^^^^^
+30 |         #[tag = 0]
+   |         ^^^^^^^^^^
 
 error: tag values must not be duplicate
-  --> $DIR/tag_uniqueness.rs:31:5
+  --> $DIR/tag_uniqueness.rs:38:9
    |
-31 |     #[tag = 0]
-   |     ^^^^^^^^^^
+38 |         #[tag = 0]
+   |         ^^^^^^^^^^
