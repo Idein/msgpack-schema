@@ -1,14 +1,7 @@
 use syn::{
     parse::{ParseStream, Parser},
-    Attribute, Error, Field, LitInt, Result, Token, Variant,
+    Error, Field, LitInt, Result, Token, Variant,
 };
-
-pub fn has_untagged(attrs: &[Attribute]) -> bool {
-    attrs
-        .iter()
-        .find(|attr| attr.path.is_ident("untagged"))
-        .is_some()
-}
 
 pub fn get_field_tag(field: &Field) -> Result<LitInt> {
     let attrs: Vec<_> = field

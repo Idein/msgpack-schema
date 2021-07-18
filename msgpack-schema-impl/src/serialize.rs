@@ -1,13 +1,71 @@
-use crate::common;
+use crate::{attr, common};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields, FieldsNamed, Result};
 
 pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
+    let attrs = attr::get(&node.attrs)?;
+    if let Some(original) = attrs.optional {
+        return Err(Error::new_spanned(
+            original,
+            "#[optional] at an invalid position",
+        ));
+    }
+    if let Some(tag) = attrs.tag {
+        return Err(Error::new_spanned(
+            tag.original,
+            "#[tag] at an invalid position",
+        ));
+    }
+    let untagged = attrs.untagged;
     match &node.data {
-        Data::Struct(strut) => derive_struct(node, strut),
+        Data::Struct(strut) => match &strut.fields {
+            Fields::Named(fields) => {
+                if untagged.is_some() {
+                    derive_untagged_struct(node, strut, fields)
+                } else {
+                    derive_struct(node, strut, fields)
+                }
+            }
+            Fields::Unnamed(fields) => {
+                if let Some(original) = untagged {
+                    return Err(Error::new_spanned(
+                        original,
+                        "#[untagged] at an invalid position",
+                    ));
+                }
+                let len = fields.unnamed.len();
+                match len {
+                    0 => {
+                        return Err(Error::new_spanned(
+                            node,
+                            "empty tuple structs as serialize are not supported",
+                        ));
+                    }
+                    1 => derive_newtype_struct(node, strut, &fields.unnamed[0]),
+                    _ => {
+                        return Err(Error::new_spanned(
+                            node,
+                            "tuple structs as serialize are not supported",
+                        ))
+                    }
+                }
+            }
+            Fields::Unit => {
+                if let Some(original) = untagged {
+                    return Err(Error::new_spanned(
+                        original,
+                        "#[untagged] at an invalid position",
+                    ));
+                }
+                return Err(Error::new_spanned(
+                    node,
+                    "unit structs as serialize are not supported",
+                ));
+            }
+        },
         Data::Enum(enu) => {
-            if common::has_untagged(&node.attrs) {
+            if untagged.is_some() {
                 derive_untagged_enum(node, enu)
             } else {
                 derive_enum(node, enu)
@@ -20,43 +78,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     }
 }
 
-fn derive_struct(node: &DeriveInput, strut: &DataStruct) -> Result<TokenStream> {
-    match &strut.fields {
-        Fields::Named(fields) => {
-            if common::has_untagged(&node.attrs) {
-                derive_untagged_c_struct(node, strut, fields)
-            } else {
-                derive_c_struct(node, strut, fields)
-            }
-        }
-        Fields::Unnamed(fields) => {
-            let len = fields.unnamed.len();
-            match len {
-                0 => {
-                    return Err(Error::new_spanned(
-                        node,
-                        "empty tuple structs as serialize are not supported",
-                    ));
-                }
-                1 => derive_newtype_struct(node, strut, &fields.unnamed[0]),
-                _ => {
-                    return Err(Error::new_spanned(
-                        node,
-                        "tuple structs as serialize are not supported",
-                    ))
-                }
-            }
-        }
-        Fields::Unit => {
-            return Err(Error::new_spanned(
-                node,
-                "unit structs as serialize are not supported",
-            ));
-        }
-    }
-}
-
-fn derive_c_struct(
+fn derive_struct(
     node: &DeriveInput,
     _strut: &DataStruct,
     named_fields: &FieldsNamed,
@@ -290,7 +312,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
     Ok(gen)
 }
 
-fn derive_untagged_c_struct(
+fn derive_untagged_struct(
     node: &DeriveInput,
     _strut: &DataStruct,
     named_fields: &FieldsNamed,

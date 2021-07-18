@@ -1,3 +1,4 @@
+mod attr;
 mod common;
 mod deserialize;
 mod serialize;
