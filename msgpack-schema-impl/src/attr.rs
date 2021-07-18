@@ -13,7 +13,7 @@ pub struct Attrs<'a> {
 #[derive(Clone)]
 pub struct Tag<'a> {
     pub original: &'a Attribute,
-    pub tag: LitInt,
+    pub tag: u32,
 }
 
 #[derive(Clone)]
@@ -39,8 +39,9 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
         } else if attr.path.is_ident("tag") {
             let parser = |input: ParseStream| {
                 let _eq_token: Token![=] = input.parse()?;
-                let lit_int: LitInt = input.parse()?;
-                Ok(lit_int)
+                let lit_int = input.parse::<LitInt>()?;
+                let tag = lit_int.base10_parse::<u32>()?;
+                Ok(tag)
             };
             let tag = parser.parse2(attr.tokens.clone())?;
             if output.tag.is_some() {
@@ -87,23 +88,25 @@ fn parse_schema_attribute<'a>(output: &mut Attrs<'a>, attr: &'a Attribute) -> Re
             return Ok(());
         } else if let Some(_kw) = input.parse::<Option<tag>>()? {
             let _eq_token: Token![=] = input.parse()?;
-            let lit_int: LitInt = input.parse()?;
+            let lit_int = input.parse::<LitInt>()?;
+            let tag = lit_int.base10_parse::<u32>()?;
             if output.tag.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[tag] attribute"));
             }
             output.tag = Some(Tag {
                 original: attr,
-                tag: lit_int,
+                tag,
             });
             return Ok(());
         }
         let lit_int: LitInt = input.parse()?;
+        let tag = lit_int.base10_parse::<u32>()?;
         if output.tag.is_some() {
             return Err(Error::new_spanned(attr, "duplicate #[tag] attribute"));
         }
         output.tag = Some(Tag {
             original: attr,
-            tag: lit_int,
+            tag,
         });
         Ok(())
     })
