@@ -8,21 +8,27 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ### Added
 
-- Report errors when there are attributes in an invalid position
-- (experimental) Add `schema` attribute
-- Support `#[flatten]`
-
 ### Fixed
 
 ### Removed
-
-- Remove `Serialize` and `Deserialize` impls for `Option<T>`
 
 ### Changed
 
 ---
 
 ## [Released]
+
+## 0.4.0 - 2021-07-19
+
+### Added
+
+- Report errors when there are attributes in an invalid position
+- (experimental) Add `schema` attribute
+- Support `#[flatten]`
+
+### Removed
+
+- Remove `Serialize` and `Deserialize` impls for `Option<T>`
 
 ## 0.3.1 - 2021-06-21
 

@@ -1,6 +1,6 @@
 [package]
 name = "msgpack-schema"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
 edition = "2018"
 description = "A specification language for MessagePack data format"
@@ -12,7 +12,7 @@ categories = ["encoding"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-msgpack-schema-impl = { version = "=0.3.1", path = "./msgpack-schema-impl" }
+msgpack-schema-impl = { version = "=0.4.0", path = "./msgpack-schema-impl" }
 rmp = "0.8"
 thiserror = "^1.0.25"
 byteorder = "1"
