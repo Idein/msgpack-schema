@@ -20,7 +20,6 @@
 //!
 //! - The deserializer ignores irrelevant key-value pairs in MsgPack map objects.
 //! - MsgPack map objects must not have duplicate keys.
-//! - `Option<T>` is roughly equal to declaring `T | null` in TypeScript. Deserializer interprets `nil` as `None` whatever `T` is. So `Option<Option<T>>` is the same as `Option<T>` (unless used together with `#[optional]`.)
 //!
 //! ### Structs with named fields
 //!
@@ -427,7 +426,7 @@ use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::{self, Write};
 use thiserror::Error;
-use value::{Bin, Ext, Int, Nil, Str};
+use value::{Bin, Ext, Int, Str};
 
 pub struct Serializer {
     w: Vec<u8>,
@@ -580,15 +579,6 @@ impl Serialize for str {
 impl Serialize for String {
     fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_str(self.as_bytes())
-    }
-}
-
-impl<T: Serialize> Serialize for Option<T> {
-    fn serialize(&self, serializer: &mut Serializer) {
-        match self {
-            Some(v) => serializer.serialize(v),
-            None => serializer.serialize_nil(),
-        }
     }
 }
 
@@ -1022,16 +1012,6 @@ impl Deserialize for String {
         let Str(data) = deserializer.deserialize()?;
         let v = String::from_utf8(data).map_err(|_| ValidationError)?;
         Ok(v)
-    }
-}
-
-impl<T: Deserialize> Deserialize for Option<T> {
-    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
-        if deserializer.try_deserialize::<Nil>()?.is_some() {
-            return Ok(None);
-        }
-        let v = deserializer.deserialize()?;
-        Ok(Some(v))
     }
 }
 
