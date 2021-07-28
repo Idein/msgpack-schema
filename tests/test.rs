@@ -482,3 +482,12 @@ fn deserialize_struct_flatten() {
         .unwrap()
     );
 }
+
+#[test]
+fn serialize_deserialize_empty() {
+    let empty = value::Empty {};
+
+    assert_eq!(value::serialize(&empty), msgpack!({}));
+
+    assert_eq!(empty, value::deserialize(msgpack!({})).unwrap());
+}

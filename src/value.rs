@@ -737,6 +737,26 @@ impl Deserialize for Any {
     }
 }
 
+/// A special type used to serialize and deserialize the empty map.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Empty {}
+
+impl Serialize for Empty {
+    fn serialize(&self, serializer: &mut Serializer) {
+        serializer.serialize_map(0)
+    }
+}
+
+impl Deserialize for Empty {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let token = deserializer.deserialize_token()?;
+        if token != Token::Map(0) {
+            return Err(ValidationError.into());
+        }
+        Ok(Self {})
+    }
+}
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! msgpack_array {
