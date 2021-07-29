@@ -1,7 +1,12 @@
+use std::str::FromStr;
+
 use crate::attr;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields, FieldsNamed, Result};
+use syn::{
+    Data, DataEnum, DataStruct, DeriveInput, Error, Field, Fields, FieldsNamed, FieldsUnnamed,
+    Result,
+};
 
 pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     let attrs = attr::get(&node.attrs)?;
@@ -28,12 +33,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
                         ));
                     }
                     1 => derive_newtype_struct(node, strut, &fields.unnamed[0]),
-                    _ => {
-                        return Err(Error::new_spanned(
-                            node,
-                            "tuple structs as serialize are not supported",
-                        ))
-                    }
+                    _ => derive_tuple_struct(node, strut, fields),
                 }
             }
             Fields::Unit => {
@@ -203,6 +203,42 @@ fn derive_newtype_struct(
 
     let fn_body = quote! {
         serializer.serialize(&self.0);
+    };
+
+    let gen = quote! {
+        #[allow(unused_qualifications)]
+        impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
+                #fn_body
+            }
+        }
+    };
+
+    Ok(gen)
+}
+
+fn derive_tuple_struct(
+    node: &DeriveInput,
+    _strut: &DataStruct,
+    fields: &FieldsUnnamed,
+) -> Result<TokenStream> {
+    let ty = &node.ident;
+    let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
+
+    for field in &fields.unnamed {
+        let attrs = attr::get(&field.attrs)?;
+        attrs.disallow_tag()?;
+        attrs.disallow_optional()?;
+        attrs.disallow_untagged()?;
+        attrs.disallow_flatten()?;
+    }
+
+    let count = fields.unnamed.len() as u32;
+    let field_specs = (0..count).map(|n| TokenStream::from_str(&format!("{}", n)).unwrap());
+
+    let fn_body = quote! {
+        serializer.serialize_array(#count);
+        #( serializer.serialize(&self.#field_specs); )*
     };
 
     let gen = quote! {

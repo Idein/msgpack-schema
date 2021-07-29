@@ -491,3 +491,12 @@ fn serialize_deserialize_empty() {
 
     assert_eq!(empty, value::deserialize(msgpack!({})).unwrap());
 }
+
+#[test]
+fn serialize_tuple_struct() {
+    #[derive(Serialize, Debug, PartialEq, Eq)]
+    struct S(u32, String);
+
+    let s = S(42, "hello".to_owned());
+    assert_eq!(value::serialize(&s), msgpack!([42, "hello"]));
+}
