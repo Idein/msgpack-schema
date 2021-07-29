@@ -272,14 +272,14 @@
 //! <tr>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! struct S(u32, bool)
 //! ```
 //!
 //! </td>
 //! <td>
 //!
-//! ```rust
+//! ```rust,ignore
 //! S(42, true)
 //! ```
 //!
