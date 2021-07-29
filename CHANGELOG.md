@@ -8,9 +8,6 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 
 ### Added
 
-- Add `value::Empty`
-- Support tuple structs (with more than one field)
-
 ### Fixed
 
 ### Removed
@@ -20,6 +17,13 @@ The format is based on [Keep a Changelog][https://keepachangelog.com/en/1.0.0/] 
 ---
 
 ## [Released]
+
+## 0.4.1 - 2021-07-29
+
+### Added
+
+- Add `value::Empty`
+- Support tuple structs (with more than one field)
 
 ## 0.4.0 - 2021-07-19
 
