@@ -1,7 +1,9 @@
 use crate::attr;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Error, Fields, FieldsNamed, Result};
+use syn::{
+    Data, DataEnum, DataStruct, DeriveInput, Error, Fields, FieldsNamed, FieldsUnnamed, Result,
+};
 
 pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
     let attrs = attr::get(&node.attrs)?;
@@ -28,12 +30,7 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
                         ));
                     }
                     1 => derive_newtype_struct(node, strut, &fields.unnamed[0]),
-                    _ => {
-                        return Err(Error::new_spanned(
-                            node,
-                            "tuple structs as deserialize are not supported",
-                        ))
-                    }
+                    _ => derive_tuple_struct(node, strut, fields),
                 }
             }
             Fields::Unit => {
@@ -207,6 +204,57 @@ fn derive_newtype_struct(
 
     let fn_body = quote! {
         __deserializer.deserialize().map(Self)
+    };
+
+    let gen = quote! {
+        #[allow(unused_qualifications)]
+        impl #impl_generics ::msgpack_schema::Deserialize for #ty #ty_generics #where_clause {
+            fn deserialize(__deserializer: &mut ::msgpack_schema::Deserializer) -> ::std::result::Result<Self, ::msgpack_schema::DeserializeError> {
+                #fn_body
+            }
+        }
+    };
+
+    Ok(gen)
+}
+
+fn derive_tuple_struct(
+    node: &DeriveInput,
+    _strut: &DataStruct,
+    fields: &FieldsUnnamed,
+) -> Result<TokenStream> {
+    let ty = &node.ident;
+    let (impl_generics, ty_generics, where_clause) = node.generics.split_for_impl();
+
+    for field in &fields.unnamed {
+        let attrs = attr::get(&field.attrs)?;
+        attrs.disallow_tag()?;
+        attrs.disallow_optional()?;
+        attrs.disallow_untagged()?;
+        attrs.disallow_flatten()?;
+    }
+
+    let count = fields.unnamed.len() as u32;
+
+    let members = (0..count).map(|_| {
+        quote! {
+            __deserializer.deserialize()?
+        }
+    });
+
+    let fn_body = quote! {
+        match __deserializer.deserialize_token()? {
+            ::msgpack_schema::Token::Array(len) => {
+                if len != #count {
+                    return Err(::msgpack_schema::ValidationError.into())
+                }
+            },
+            _ => return Err(::msgpack_schema::ValidationError.into()),
+        };
+
+        Ok(Self(
+            #( #members ),*
+        ))
     };
 
     let gen = quote! {

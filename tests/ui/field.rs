@@ -62,6 +62,18 @@ mod serialize {
         #[flatten]
         x: String,
     }
+
+    #[derive(Serialize)]
+    struct S12(u32, #[tag = 1] String);
+
+    #[derive(Serialize)]
+    struct S13(u32, #[optional] String);
+
+    #[derive(Serialize)]
+    struct S14(u32, #[untagged] String);
+
+    #[derive(Serialize)]
+    struct S15(u32, #[flatten] String);
 }
 
 mod deserialize {
@@ -126,6 +138,18 @@ mod deserialize {
         #[flatten]
         x: String,
     }
+
+    #[derive(Deserialize)]
+    struct S12(u32, #[tag = 1] String);
+
+    #[derive(Deserialize)]
+    struct S13(u32, #[optional] String);
+
+    #[derive(Deserialize)]
+    struct S14(u32, #[untagged] String);
+
+    #[derive(Deserialize)]
+    struct S15(u32, #[flatten] String);
 }
 
 fn main() {}

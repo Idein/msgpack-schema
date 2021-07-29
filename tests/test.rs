@@ -500,3 +500,25 @@ fn serialize_tuple_struct() {
     let s = S(42, "hello".to_owned());
     assert_eq!(value::serialize(&s), msgpack!([42, "hello"]));
 }
+
+#[test]
+fn deserialize_tuple_struct() {
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    struct S(u32, String);
+
+    let s = S(42, "hello".to_owned());
+    assert_eq!(s, value::deserialize(msgpack!([42, "hello"])).unwrap());
+}
+
+#[test]
+fn deserialize_tuple_struct_wrong_length() {
+    #[derive(Deserialize, Debug)]
+    struct S(u32, bool);
+
+    let v = msgpack!([42]);
+
+    assert!(matches!(
+        value::deserialize::<S>(v).unwrap_err(),
+        msgpack_schema::DeserializeError::Validation(_)
+    ));
+}

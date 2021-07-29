@@ -251,6 +251,49 @@
 //! </tr>
 //! </table>
 //!
+//! ### Tuple structs
+//!
+//! Tuple structs with more than one element are encoded as an array.
+//! It is validation error to deserialize an array with unmatched length.
+//!
+//! <table>
+//! <tr>
+//! <th>
+//! schema
+//! </th>
+//! <th>
+//! Rust
+//! </th>
+//! <th>
+//! MessagePack
+//! </th>
+//! </tr>
+//! <tr>
+//! <tr>
+//! <td>
+//!
+//! ```rust
+//! struct S(u32, bool)
+//! ```
+//!
+//! </td>
+//! <td>
+//!
+//! ```rust
+//! S(42, true)
+//! ```
+//!
+//! </td>
+//! <td>
+//!
+//! ```js
+//! [ 42, true ]
+//! ```
+//!
+//! </td>
+//! </tr>
+//! </table>
+//!
 //! ### Unit variants and empty tuple variants
 //!
 //! Unit variants and empty tuple variants are serialized into a single fixint whose value is determined by the tag.

@@ -28,6 +28,10 @@ mod serialize {
     #[derive(Serialize)]
     #[untagged]
     struct S4;
+
+    #[derive(Serialize)]
+    #[untagged]
+    struct S6(u32, String);
 }
 
 mod deserialize {
@@ -58,6 +62,10 @@ mod deserialize {
     #[derive(Deserialize)]
     #[untagged]
     struct S4;
+
+    #[derive(Deserialize)]
+    #[untagged]
+    struct S6(u32, String);
 }
 
 fn main() {}

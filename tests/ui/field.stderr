@@ -64,68 +64,116 @@ error: #[optional] at an invalid position
 61 |         #[optional]
    |         ^^^^^^^^^^^
 
-error: #[untagged] at an invalid position
-  --> $DIR/field.rs:72:9
+error: #[tag] at an invalid position
+  --> $DIR/field.rs:67:21
    |
-72 |         #[untagged]
+67 |     struct S12(u32, #[tag = 1] String);
+   |                     ^^^^^^^^^^
+
+error: #[optional] at an invalid position
+  --> $DIR/field.rs:70:21
+   |
+70 |     struct S13(u32, #[optional] String);
+   |                     ^^^^^^^^^^^
+
+error: #[untagged] at an invalid position
+  --> $DIR/field.rs:73:21
+   |
+73 |     struct S14(u32, #[untagged] String);
+   |                     ^^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+  --> $DIR/field.rs:76:21
+   |
+76 |     struct S15(u32, #[flatten] String);
+   |                     ^^^^^^^^^^
+
+error: #[untagged] at an invalid position
+  --> $DIR/field.rs:84:9
+   |
+84 |         #[untagged]
    |         ^^^^^^^^^^^
 
 error: #[tag] at an invalid position
-  --> $DIR/field.rs:77:15
+  --> $DIR/field.rs:89:15
    |
-77 |     struct S2(#[tag = 1] String);
+89 |     struct S2(#[tag = 1] String);
    |               ^^^^^^^^^^
 
 error: #[optional] at an invalid position
-  --> $DIR/field.rs:80:15
+  --> $DIR/field.rs:92:15
    |
-80 |     struct S3(#[optional] String);
+92 |     struct S3(#[optional] String);
    |               ^^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/field.rs:83:15
+  --> $DIR/field.rs:95:15
    |
-83 |     struct S4(#[untagged] String);
+95 |     struct S4(#[untagged] String);
    |               ^^^^^^^^^^^
 
 error: #[flatten] at an invalid position
-  --> $DIR/field.rs:86:15
+  --> $DIR/field.rs:98:15
    |
-86 |     struct S8(#[flatten] String);
+98 |     struct S8(#[flatten] String);
    |               ^^^^^^^^^^
 
 error: #[tag] at an invalid position
-  --> $DIR/field.rs:91:9
-   |
-91 |         #[tag = 0]
-   |         ^^^^^^^^^^
+   --> $DIR/field.rs:103:9
+    |
+103 |         #[tag = 0]
+    |         ^^^^^^^^^^
 
 error: #[untagged] at an invalid position
-  --> $DIR/field.rs:98:9
-   |
-98 |         #[untagged]
-   |         ^^^^^^^^^^^
+   --> $DIR/field.rs:110:9
+    |
+110 |         #[untagged]
+    |         ^^^^^^^^^^^
 
 error: #[optional] at an invalid position
-   --> $DIR/field.rs:105:9
+   --> $DIR/field.rs:117:9
     |
-105 |         #[optional]
+117 |         #[optional]
     |         ^^^^^^^^^^^
 
 error: #[flatten] at an invalid position
-   --> $DIR/field.rs:112:9
+   --> $DIR/field.rs:124:9
     |
-112 |         #[flatten]
+124 |         #[flatten]
     |         ^^^^^^^^^^
 
 error: #[tag] at an invalid position
-   --> $DIR/field.rs:118:9
+   --> $DIR/field.rs:130:9
     |
-118 |         #[tag = 1]
+130 |         #[tag = 1]
     |         ^^^^^^^^^^
 
 error: #[optional] at an invalid position
-   --> $DIR/field.rs:125:9
+   --> $DIR/field.rs:137:9
     |
-125 |         #[optional]
+137 |         #[optional]
     |         ^^^^^^^^^^^
+
+error: #[tag] at an invalid position
+   --> $DIR/field.rs:143:21
+    |
+143 |     struct S12(u32, #[tag = 1] String);
+    |                     ^^^^^^^^^^
+
+error: #[optional] at an invalid position
+   --> $DIR/field.rs:146:21
+    |
+146 |     struct S13(u32, #[optional] String);
+    |                     ^^^^^^^^^^^
+
+error: #[untagged] at an invalid position
+   --> $DIR/field.rs:149:21
+    |
+149 |     struct S14(u32, #[untagged] String);
+    |                     ^^^^^^^^^^^
+
+error: #[flatten] at an invalid position
+   --> $DIR/field.rs:152:21
+    |
+152 |     struct S15(u32, #[flatten] String);
+    |                     ^^^^^^^^^^
