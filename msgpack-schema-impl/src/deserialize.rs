@@ -23,22 +23,20 @@ pub fn derive(node: &DeriveInput) -> Result<TokenStream> {
                 attrs.disallow_untagged()?;
                 let len = fields.unnamed.len();
                 match len {
-                    0 => {
-                        return Err(Error::new_spanned(
-                            node,
-                            "empty tuple structs as deserialize are not supported",
-                        ));
-                    }
+                    0 => Err(Error::new_spanned(
+                        node,
+                        "empty tuple structs as deserialize are not supported",
+                    )),
                     1 => derive_newtype_struct(node, strut, &fields.unnamed[0]),
                     _ => derive_tuple_struct(node, strut, fields),
                 }
             }
             Fields::Unit => {
                 attrs.disallow_untagged()?;
-                return Err(Error::new_spanned(
+                Err(Error::new_spanned(
                     node,
                     "unit structs as deserialize are not supported",
-                ));
+                ))
             }
         },
         Data::Enum(enu) => {
