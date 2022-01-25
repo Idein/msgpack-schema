@@ -2,7 +2,7 @@
 name = "msgpack-schema-impl"
 version = "0.4.1"
 authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
-edition = "2018"
+edition = "2021"
 description = "Implementation detail of the msgpack-schema crate"
 license = "MIT"
 repository = "https://github.com/Idein/msgpack-schema"
