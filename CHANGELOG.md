@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Released]
 
+## 0.4.2 - 2022-01-25
+
+### Changed
+
+- Bump Rust edition to 2021 (no user-facing changes)
+
 ## 0.4.1 - 2021-07-29
 
 ### Added
