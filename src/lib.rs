@@ -535,6 +535,12 @@ impl<T: Serialize> Serialize for &T {
     }
 }
 
+impl<T: Serialize> Serialize for Box<T> {
+    fn serialize(&self, serializer: &mut Serializer) {
+        T::serialize(&*self, serializer)
+    }
+}
+
 impl Serialize for bool {
     fn serialize(&self, serializer: &mut Serializer) {
         serializer.serialize_bool(*self)
@@ -1055,6 +1061,12 @@ impl Deserialize for String {
         let Str(data) = deserializer.deserialize()?;
         let v = String::from_utf8(data).map_err(|_| ValidationError)?;
         Ok(v)
+    }
+}
+
+impl<T: Deserialize> Deserialize for Box<T> {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Ok(Box::new(deserializer.deserialize()?))
     }
 }
 
