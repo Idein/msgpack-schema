@@ -811,7 +811,7 @@ impl<'a> Deserializer<'a> {
             rmp::Marker::Array32 => Token::Array(
                 self.r
                     .read_u32::<BigEndian>()
-                    .map_err(|_| InvalidInputError)? as u32,
+                    .map_err(|_| InvalidInputError)?,
             ),
             rmp::Marker::FixMap(len) => Token::Map(len as u32),
             rmp::Marker::Map16 => Token::Map(
@@ -822,7 +822,7 @@ impl<'a> Deserializer<'a> {
             rmp::Marker::Map32 => Token::Map(
                 self.r
                     .read_u32::<BigEndian>()
-                    .map_err(|_| InvalidInputError)? as u32,
+                    .map_err(|_| InvalidInputError)?,
             ),
             rmp::Marker::FixExt1 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
