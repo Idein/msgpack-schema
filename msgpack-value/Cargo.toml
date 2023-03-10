@@ -9,3 +9,5 @@ repository = "https://github.com/Idein/msgpack-schema"
 
 [dependencies]
 thiserror = "^1.0.25"
+proptest = "1"
+proptest-derive = "0.3"
