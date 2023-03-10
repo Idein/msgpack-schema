@@ -1146,8 +1146,57 @@ impl Deserialize for Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
+    use proptest_derive::Arbitrary;
 
-    #[derive(Debug, PartialEq, Eq)]
+    macro_rules! roundtrip {
+        ($name:ident, $ty:ty) => {
+            #[cfg(test)]
+            mod $name {
+                use super::*;
+                proptest! {
+                    #[test]
+                    fn test(v: $ty) {
+                        assert_eq!(v, deserialize::<$ty>(serialize(&v).as_slice()).unwrap());
+                    }
+                }
+            }
+        };
+    }
+
+    roundtrip!(roundtrip_bool, bool);
+    roundtrip!(roundtrip_i8, i8);
+    roundtrip!(roundtrip_i16, i16);
+    roundtrip!(roundtrip_i32, i32);
+    roundtrip!(roundtrip_i64, i64);
+    roundtrip!(roundtrip_u8, u8);
+    roundtrip!(roundtrip_u16, u16);
+    roundtrip!(roundtrip_u32, u32);
+    roundtrip!(roundtrip_u64, u64);
+    roundtrip!(roundtrip_f32, f32);
+    roundtrip!(roundtrip_f64, f64);
+    roundtrip!(roundtrip_str, String);
+    roundtrip!(roundtrip_blob, Vec<i32>);
+
+    roundtrip!(roundtrip_value, Value);
+    roundtrip!(roundtrip_int, value::Int);
+
+    #[test]
+    fn roundtrip_empty() {
+        use value::Empty;
+        assert_eq!(
+            Empty {},
+            deserialize(serialize(Empty {}).as_slice()).unwrap()
+        );
+    }
+
+    #[test]
+    fn roundtrip_nil() {
+        use value::Nil;
+        assert_eq!(Nil, deserialize(serialize(Nil).as_slice()).unwrap());
+    }
+
+    #[derive(Debug, PartialEq, Eq, Arbitrary)]
     struct Human {
         age: u32,
         name: String,
@@ -1199,18 +1248,10 @@ mod tests {
         }
     }
 
-    #[test]
-    fn it_works() {
-        let val = Human {
-            age: 42,
-            name: "John".into(),
-        };
-
-        assert_eq!(val, value::deserialize(value::serialize(&val)).unwrap())
-    }
+    roundtrip!(roundtrip_human, Human);
 
     #[test]
-    fn msgpack_macro() {
+    fn compare_with_value() {
         let val = Human {
             age: 42,
             name: "John".into(),
