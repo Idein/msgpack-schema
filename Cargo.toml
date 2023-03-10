@@ -1,5 +1,5 @@
 [workspace]
-default-members = [".", "msgpack-schema-impl"]
+default-members = [".", "msgpack-schema-impl", "msgpack-value"]
 
 [package]
 name = "msgpack-schema"
