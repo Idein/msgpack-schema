@@ -793,6 +793,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn roundtrip_int() {
+        assert_eq!(i64::MAX, Int::from(i64::MAX).try_into().unwrap());
+        assert_eq!(i64::MIN, Int::from(i64::MIN).try_into().unwrap());
+        assert_eq!(u64::MAX, Int::from(u64::MAX).try_into().unwrap());
+        assert_eq!(u64::MIN, Int::from(u64::MIN).try_into().unwrap());
+    }
+
+    #[test]
     fn msgpack_macro() {
         assert_eq!(Value::Int(Int::from(42)), msgpack!(42));
         assert_eq!(Value::Int(Int::from(-42)), msgpack!(-42));
