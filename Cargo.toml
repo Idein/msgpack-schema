@@ -16,7 +16,7 @@ categories = ["encoding"]
 
 [dependencies]
 msgpack-schema-impl = { version = "=0.4.2", path = "./msgpack-schema-impl" }
-msgpack-value = { version = "=0.1.0", path = "./msgpack-value" }
+msgpack-value = { version = "=0.4.2", path = "./msgpack-value" }
 rmp = "0.8"
 thiserror = "^1.0.25"
 byteorder = "1"
