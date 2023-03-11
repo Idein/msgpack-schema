@@ -848,7 +848,7 @@ macro_rules! msgpack_value {
         {
             #[allow(unused_mut)]
             let mut array;
-            #[allow(clippy::clippy::vec_init_then_push)]
+            #[allow(clippy::vec_init_then_push)]
             {
                 array = vec![];
                 $crate::msgpack_array!(array $( $tt )*);
@@ -860,7 +860,7 @@ macro_rules! msgpack_value {
         {
             #[allow(unused_mut)]
             let mut map;
-            #[allow(clippy::clippy::vec_init_then_push)]
+            #[allow(clippy::vec_init_then_push)]
             {
                 map = vec![];
                 $crate::msgpack_map!(@key map [] $( $tt )*);
