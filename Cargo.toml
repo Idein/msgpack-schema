@@ -1,3 +1,6 @@
+[workspace]
+default-members = [".", "msgpack-schema-impl"]
+
 [package]
 name = "msgpack-schema"
 version = "0.4.2"
