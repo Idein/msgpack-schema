@@ -10,4 +10,4 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: ./github/workflows/bump.bash minor
+      - run: .github/workflows/bump.bash minor
