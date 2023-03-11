@@ -72,6 +72,7 @@ cat <<< "$(bump_changelog CHANGELOG.md)" > CHANGELOG.md
 cat <<< "$(bump_manifest msgpack-schema-impl/Cargo.toml)" > msgpack-schema-impl/Cargo.toml
 # shellcheck disable=SC2094
 cat <<< "$(bump_manifest Cargo.toml)" > Cargo.toml
+sed -i "s/version = \"=$VERSION\"/version = \"=$NEW_VERSION\"/g" Cargo.toml
 
 git add CHANGELOG.md msgpack-schema-impl/Cargo.toml Cargo.toml
 git commit -m "bump $NEW_VERSION"
