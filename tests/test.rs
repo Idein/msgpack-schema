@@ -26,7 +26,7 @@ fn serialize_struct_tag() {
         name: "John".into(),
     };
     assert_eq!(
-        serialize_to_value(&val),
+        value::serialize(&val),
         Value::Map(vec![
             (Value::Int(0.into()), Value::Int(42.into())),
             (Value::Int(2.into()), Value::Str("John".to_owned().into()))
@@ -54,7 +54,7 @@ fn deserialize_struct_tag() {
             age: 42,
             name: "John".into(),
         },
-        deserialize_from_value(val).unwrap()
+        value::deserialize(val).unwrap()
     );
 }
 
@@ -73,10 +73,7 @@ fn struct_tag_roundtrip() {
         name: "John".into(),
     };
 
-    assert_eq!(
-        val,
-        deserialize_from_value(serialize_to_value(&val)).unwrap()
-    );
+    assert_eq!(val, value::deserialize(value::serialize(&val)).unwrap());
 
     let val = Value::Map(vec![
         (Value::Int(0.into()), Value::Int(42.into())),
@@ -85,7 +82,7 @@ fn struct_tag_roundtrip() {
 
     assert_eq!(
         val,
-        serialize_to_value(&deserialize_from_value::<Human>(val.clone()).unwrap())
+        value::serialize(&value::deserialize::<Human>(val.clone()).unwrap())
     );
 }
 
@@ -105,7 +102,7 @@ fn error_duplicate_tags() {
         (Value::Int(2.into()), Value::Str("John".to_owned().into())),
     ]);
 
-    assert!(deserialize_from_value::<Human>(val).is_err());
+    assert!(value::deserialize::<Human>(val).is_err());
 }
 
 #[test]
@@ -124,7 +121,7 @@ fn serialize_struct_optional() {
         name: Some("John".into()),
     };
     assert_eq!(
-        serialize_to_value(&val),
+        value::serialize(&val),
         Value::Map(vec![
             (Value::Int(0.into()), Value::Int(42.into())),
             (Value::Int(2.into()), Value::Str("John".to_owned().into()))
@@ -136,7 +133,7 @@ fn serialize_struct_optional() {
         name: None,
     };
     assert_eq!(
-        serialize_to_value(&val),
+        value::serialize(&val),
         Value::Map(vec![(Value::Int(0.into()), Value::Int(42.into())),])
     );
 }
@@ -161,7 +158,7 @@ fn deserialize_struct_optional() {
             age: 42,
             name: Some("John".into()),
         },
-        deserialize_from_value(val).unwrap()
+        value::deserialize(val).unwrap()
     );
 
     let val = Value::Map(vec![(Value::Int(0.into()), Value::Int(42.into()))]);
@@ -170,7 +167,7 @@ fn deserialize_struct_optional() {
             age: 42,
             name: None,
         },
-        deserialize_from_value(val).unwrap()
+        value::deserialize(val).unwrap()
     );
 }
 
@@ -183,7 +180,7 @@ fn serialize_unit_variants() {
     }
 
     let val = Animal::Dog;
-    assert_eq!(serialize_to_value(&val), Value::Int(2.into()));
+    assert_eq!(value::serialize(&val), Value::Int(2.into()));
 }
 
 #[test]
@@ -195,7 +192,7 @@ fn deserialize_unit_variants() {
     }
 
     let val = Value::Int(2.into());
-    assert_eq!(Animal::Dog, deserialize_from_value(val).unwrap());
+    assert_eq!(Animal::Dog, value::deserialize(val).unwrap());
 }
 
 #[test]
@@ -204,7 +201,7 @@ fn serialize_newtype_struct() {
     struct S(u32);
 
     let val = S(42);
-    assert_eq!(serialize_to_value(&val), Value::Int(42.into()));
+    assert_eq!(value::serialize(&val), Value::Int(42.into()));
 }
 
 #[test]
@@ -213,7 +210,7 @@ fn deserialize_newtype_struct() {
     struct S(u32);
 
     let val = Value::Int(42.into());
-    assert_eq!(S(42), deserialize_from_value(val).unwrap());
+    assert_eq!(S(42), value::deserialize(val).unwrap());
 }
 
 #[test]
@@ -225,7 +222,7 @@ fn serialize_empty_tuple_variants() {
     }
 
     let val = Animal::Dog();
-    assert_eq!(serialize_to_value(&val), Value::Int(2.into()));
+    assert_eq!(value::serialize(&val), Value::Int(2.into()));
 }
 
 #[test]
@@ -237,7 +234,7 @@ fn deserialize_empty_tuple_variants() {
     }
 
     let val = Value::Int(2.into());
-    assert_eq!(Animal::Dog(), deserialize_from_value(val).unwrap());
+    assert_eq!(Animal::Dog(), value::deserialize(val).unwrap());
 }
 
 #[test]
@@ -251,12 +248,12 @@ fn serialize_tuple_variants() {
     }
 
     assert_eq!(
-        serialize_to_value(&Animal::Cat("hello".to_owned())),
+        value::serialize(&Animal::Cat("hello".to_owned())),
         Value::Array(vec![1.into(), "hello".to_owned().into()])
     );
 
     assert_eq!(
-        serialize_to_value(&Animal::Dog(42u32)),
+        value::serialize(&Animal::Dog(42u32)),
         Value::Array(vec![2.into(), 42u32.into()])
     );
 }
@@ -274,21 +271,21 @@ fn deserialize_tuple_variants() {
     }
 
     let val = Value::Int(3.into());
-    assert_eq!(Animal::Bird, deserialize_from_value(val).unwrap());
+    assert_eq!(Animal::Bird, value::deserialize(val).unwrap());
 
     let val = Value::Int(1.into());
-    assert!(deserialize_from_value::<Animal>(val).is_err());
+    assert!(value::deserialize::<Animal>(val).is_err());
 
     let val = Value::Int(10.into());
-    assert!(deserialize_from_value::<Animal>(val).is_err());
+    assert!(value::deserialize::<Animal>(val).is_err());
 
     let val = Value::Array(vec![1.into(), 42u32.to_owned().into()]);
-    assert!(deserialize_from_value::<Animal>(val).is_err());
+    assert!(value::deserialize::<Animal>(val).is_err());
 
     let val = Value::Array(vec![1.into(), "hello".to_owned().into()]);
     assert_eq!(
         Animal::Cat("hello".to_owned()),
-        deserialize_from_value(val).unwrap()
+        value::deserialize(val).unwrap()
     );
 }
 
@@ -302,10 +299,10 @@ fn serialize_untagged_enum() {
     }
 
     let val = Value::Int(3.into());
-    assert_eq!(serialize_to_value(&Animal::Dog(3)), val);
+    assert_eq!(value::serialize(&Animal::Dog(3)), val);
 
     let val = Value::Str("hello".to_owned().into());
-    assert_eq!(serialize_to_value(&Animal::Cat("hello".to_owned())), val);
+    assert_eq!(value::serialize(&Animal::Cat("hello".to_owned())), val);
 }
 
 #[test]
@@ -318,16 +315,16 @@ fn deserialize_untagged_enum() {
     }
 
     let val = Value::Int(3.into());
-    assert_eq!(Animal::Dog(3), deserialize_from_value(val).unwrap());
+    assert_eq!(Animal::Dog(3), value::deserialize(val).unwrap());
 
     let val = Value::Str("hello".to_owned().into());
     assert_eq!(
         Animal::Cat("hello".to_owned()),
-        deserialize_from_value::<Animal>(val).unwrap()
+        value::deserialize::<Animal>(val).unwrap()
     );
 
     let val = Value::Int((-10).into());
-    assert!(deserialize_from_value::<Animal>(val).is_err());
+    assert!(value::deserialize::<Animal>(val).is_err());
 }
 
 #[test]
@@ -343,7 +340,7 @@ fn serialize_untagged_struct() {
         name: "John".to_string(),
         age: 42,
     };
-    assert_eq!(serialize_to_value(&val), msgpack!(["John", 42]));
+    assert_eq!(value::serialize(&val), msgpack!(["John", 42]));
 }
 
 #[test]
@@ -361,11 +358,11 @@ fn deserialize_untagged_struct() {
             name: "John".to_string(),
             age: 42,
         },
-        deserialize_from_value(val).unwrap()
+        value::deserialize(val).unwrap()
     );
 
     let val = msgpack!(["John", 42, nil]);
-    assert!(deserialize_from_value::<Human>(val).is_err());
+    assert!(value::deserialize::<Human>(val).is_err());
 }
 
 fn arb_value() -> impl Strategy<Value = Value> {
@@ -420,7 +417,7 @@ fn serialize_struct_tag_schema() {
         name: "John".into(),
     };
     assert_eq!(
-        serialize_to_value(&val),
+        value::serialize(&val),
         Value::Map(vec![
             (Value::Int(0.into()), Value::Int(42.into())),
             (Value::Int(2.into()), Value::Str("John".to_owned().into()))
@@ -449,7 +446,7 @@ fn serialize_struct_flatten() {
         s1: S1 { x: 43 },
     };
     assert_eq!(
-        serialize_to_value(&val),
+        value::serialize(&val),
         Value::Map(vec![
             (Value::Int(2.into()), Value::Int(42.into())),
             (Value::Int(1.into()), Value::Int(43.into()))
@@ -479,7 +476,7 @@ fn deserialize_struct_flatten() {
     };
     assert_eq!(
         val,
-        deserialize_from_value(Value::Map(vec![
+        value::deserialize(Value::Map(vec![
             (Value::Int(2.into()), Value::Int(42.into())),
             (Value::Int(1.into()), Value::Int(43.into()))
         ]))
@@ -491,9 +488,9 @@ fn deserialize_struct_flatten() {
 fn serialize_deserialize_empty() {
     let empty = value::Empty {};
 
-    assert_eq!(serialize_to_value(&empty), msgpack!({}));
+    assert_eq!(value::serialize(&empty), msgpack!({}));
 
-    assert_eq!(empty, deserialize_from_value(msgpack!({})).unwrap());
+    assert_eq!(empty, value::deserialize(msgpack!({})).unwrap());
 }
 
 #[test]
@@ -502,7 +499,7 @@ fn serialize_tuple_struct() {
     struct S(u32, String);
 
     let s = S(42, "hello".to_owned());
-    assert_eq!(serialize_to_value(&s), msgpack!([42, "hello"]));
+    assert_eq!(value::serialize(&s), msgpack!([42, "hello"]));
 }
 
 #[test]
@@ -511,7 +508,7 @@ fn deserialize_tuple_struct() {
     struct S(u32, String);
 
     let s = S(42, "hello".to_owned());
-    assert_eq!(s, deserialize_from_value(msgpack!([42, "hello"])).unwrap());
+    assert_eq!(s, value::deserialize(msgpack!([42, "hello"])).unwrap());
 }
 
 #[test]
@@ -522,7 +519,7 @@ fn deserialize_tuple_struct_wrong_length() {
     let v = msgpack!([42]);
 
     assert!(matches!(
-        deserialize_from_value::<S>(v).unwrap_err(),
+        value::deserialize::<S>(v).unwrap_err(),
         msgpack_schema::DeserializeError::Validation(_)
     ));
 }

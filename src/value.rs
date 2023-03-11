@@ -1,7 +1,20 @@
 use crate::{
     Deserialize, DeserializeError, Deserializer, Serialize, Serializer, Token, ValidationError,
 };
+use msgpack_value::Value;
 pub use msgpack_value::{Bin, Ext, Int, Str};
+
+#[doc(hidden)]
+pub fn serialize<S: Serialize>(x: &S) -> Value {
+    let buf = crate::serialize(x);
+    crate::deserialize(&buf).unwrap()
+}
+
+#[doc(hidden)]
+pub fn deserialize<D: Deserialize>(value: Value) -> Result<D, DeserializeError> {
+    let buf = crate::serialize(value);
+    crate::deserialize::<D>(&buf)
+}
 
 /// A special type for serializing and deserializing the `nil` object.
 ///

@@ -1143,18 +1143,6 @@ impl Deserialize for Value {
     }
 }
 
-#[doc(hidden)]
-pub fn serialize_to_value<S: Serialize>(x: &S) -> Value {
-    let buf = serialize(x);
-    deserialize(&buf).unwrap()
-}
-
-#[doc(hidden)]
-pub fn deserialize_from_value<D: Deserialize>(value: Value) -> Result<D, DeserializeError> {
-    let buf = serialize(value);
-    deserialize::<D>(&buf)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1218,10 +1206,7 @@ mod tests {
             name: "John".into(),
         };
 
-        assert_eq!(
-            val,
-            deserialize_from_value(serialize_to_value(&val)).unwrap()
-        )
+        assert_eq!(val, value::deserialize(value::serialize(&val)).unwrap())
     }
 
     #[test]
