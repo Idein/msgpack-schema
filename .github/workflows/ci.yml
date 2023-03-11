@@ -6,6 +6,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   RUST_BACKTRACE: 1
+  CARGO_REGISTRY_TOKEN: ${{ secrets.IDEINBOT_CARGO_REGISTRY_TOKEN }}
 
 jobs:
   check:
@@ -68,3 +69,17 @@ jobs:
       - name: Run cargo clippy
         run: |
           cargo clippy -- -D warnings
+
+  release:
+    name: Release
+    if: github.repository == 'Idein/msgpack-schema' && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v3
+
+      - name: Run cargo publish
+        run: |
+          cargo publish --no-verify -p msgpack-schema-impl || :
+          sleep 15
+          cargo publish --no-verify -p msgpack-schema || :
