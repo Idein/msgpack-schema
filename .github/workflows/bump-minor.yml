@@ -4,11 +4,11 @@ on:
   workflow_dispatch:
 
 env:
-  GITHUB_TOKEN: ${{ secrets.IDEINBOT_TOKEN }}
-  GIT_COMMITTER_NAME: ideinbot
-  GIT_COMMITTER_EMAIL: bot@idein.jp
-  GIT_AUTHOR_NAME: ideinbot
-  GIT_AUTHOR_EMAIL: bot@idein.jp
+  GH_TOKEN: ${{ github.token }}
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+  GIT_AUTHOR_NAME: github-actions[bot]
+  GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
 
 jobs:
   bump:
