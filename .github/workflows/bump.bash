@@ -74,7 +74,7 @@ cat <<< "$(bump_manifest msgpack-schema-impl/Cargo.toml)" > msgpack-schema-impl/
 cat <<< "$(bump_manifest Cargo.toml)" > Cargo.toml
 sed -i "s/version = \"=$VERSION\"/version = \"=$NEW_VERSION\"/g" Cargo.toml
 
-git add CHANGELOG.md msgpack-schema-impl/Cargo.toml Cargo.toml
+git add .
 git commit -m "bump $NEW_VERSION"
 git push -u origin HEAD
 
