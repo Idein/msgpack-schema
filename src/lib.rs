@@ -465,6 +465,7 @@ pub mod value;
 use byteorder::BigEndian;
 use byteorder::{self, ReadBytesExt};
 pub use msgpack_schema_impl::*;
+use msgpack_value::Value;
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::{self, Write};
@@ -1084,46 +1085,62 @@ pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
     deserializer.deserialize()
 }
 
-/// Constructs a MessagePack object.
-///
-/// Return type is an opaque type implementing [Serialize].
-///
-/// # Example
-///
-/// ```
-/// # use msgpack_schema::{msgpack, value::Bin, Serialize, serialize};
-/// msgpack!(
-///   // array literal
-///   [
-///     // numeric literals
-///     0,
-///     -42,
-///     3.14,
-///     2.71f32,
-///     // actually any expression is allowed (as long as it's a supported type)
-///     1 + 2 + 3,
-///     // boolean
-///     true,
-///     false,
-///     // nil is a keyword denoting the nil object
-///     nil,
-///     // map object
-///     { "any value in key": nil },
-///     { 0: 1, "trailing comma is ok": nil, },
-///     // string literal to make a string object
-///     "hello",
-///     // Use an expression of [Bin] type to create a binary object
-///     Bin(vec![0xDE, 0xAD, 0xBE, 0xEF])
-///   ]
-/// )
-/// # ;
-/// ```
-#[doc(hidden)]
-#[macro_export]
-macro_rules! msgpack {
-    ( $( $tt: tt )+ ) => {
-        $crate::msgpack_value!($( $tt )+)
-    };
+impl Serialize for Value {
+    fn serialize(&self, serializer: &mut Serializer) {
+        match self {
+            Value::Nil => serializer.serialize_nil(),
+            Value::Bool(v) => serializer.serialize_bool(*v),
+            Value::Int(v) => serializer.serialize_int(*v),
+            Value::F32(v) => serializer.serialize_f32(*v),
+            Value::F64(v) => serializer.serialize_f64(*v),
+            Value::Str(v) => serializer.serialize_str(&v.0),
+            Value::Bin(v) => serializer.serialize_bin(&v.0),
+            Value::Array(v) => {
+                serializer.serialize_array(v.len() as u32);
+                for x in v {
+                    serializer.serialize(x);
+                }
+            }
+            Value::Map(v) => {
+                serializer.serialize_map(v.len() as u32);
+                for (k, v) in v {
+                    serializer.serialize(k);
+                    serializer.serialize(v);
+                }
+            }
+            Value::Ext(v) => serializer.serialize_ext(v.r#type, &v.data),
+        }
+    }
+}
+
+impl Deserialize for Value {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let x = match deserializer.deserialize_token()? {
+            Token::Nil => Value::Nil,
+            Token::Bool(v) => v.into(),
+            Token::Int(v) => v.into(),
+            Token::F32(v) => v.into(),
+            Token::F64(v) => v.into(),
+            Token::Str(v) => v.into(),
+            Token::Bin(v) => v.into(),
+            Token::Array(len) => {
+                let mut vec: Vec<Value> = vec![];
+                for _ in 0..len {
+                    vec.push(deserializer.deserialize()?);
+                }
+                vec.into()
+            }
+            Token::Map(len) => {
+                let mut map: Vec<(Value, Value)> = vec![];
+                for _ in 0..len {
+                    map.push((deserializer.deserialize()?, deserializer.deserialize()?));
+                }
+                map.into()
+            }
+            Token::Ext(v) => v.into(),
+        };
+        Ok(x)
+    }
 }
 
 #[cfg(test)]
@@ -1199,7 +1216,7 @@ mod tests {
             name: "John".into(),
         };
         let buf1 = serialize(&val);
-        let lit = msgpack!({
+        let lit = msgpack_value::msgpack!({
             0: 42,
             1: "John",
         });

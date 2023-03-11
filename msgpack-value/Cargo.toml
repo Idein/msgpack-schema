@@ -1,0 +1,11 @@
+[package]
+name = "msgpack-value"
+version = "0.4.2"
+authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
+edition = "2021"
+description = "Types and macros for the MessagePack data model"
+license = "MIT"
+repository = "https://github.com/Idein/msgpack-schema"
+
+[dependencies]
+thiserror = "^1.0.25"

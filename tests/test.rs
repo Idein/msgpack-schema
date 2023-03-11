@@ -1,7 +1,8 @@
 use msgpack_schema::{
-    value::{Bin, Ext, Value},
+    value::{Bin, Ext},
     *,
 };
+use msgpack_value::{msgpack, Value};
 use proptest::prelude::*;
 
 #[test]
