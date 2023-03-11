@@ -81,5 +81,6 @@ jobs:
       - name: Run cargo publish
         run: |
           cargo publish --no-verify -p msgpack-schema-impl || :
+          cargo publish --no-verify -p msgpack-value || :
           sleep 15
           cargo publish --no-verify -p msgpack-schema || :
