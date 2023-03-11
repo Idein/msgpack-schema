@@ -1,4 +1,6 @@
 //! The MessagePack Data Model
+use proptest::prelude::*;
+use proptest_derive::Arbitrary;
 use std::convert::{TryFrom, TryInto};
 use thiserror::Error;
 
@@ -219,6 +221,24 @@ impl TryFrom<Int> for isize {
     }
 }
 
+impl Arbitrary for Int {
+    type Parameters = ();
+
+    type Strategy = BoxedStrategy<Int>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        (any::<i64>(), any::<bool>())
+            .prop_map(|(high, low)| {
+                if high < 0 {
+                    Int::from(high)
+                } else {
+                    Int::from((high as u64) << 1 | (low as u64))
+                }
+            })
+            .boxed()
+    }
+}
+
 /// String objects of MessagePack are essentially byte arrays type that may contain any bytes.
 ///
 /// # String type vs Binary type
@@ -244,7 +264,7 @@ impl TryFrom<Int> for isize {
 ///
 /// Although we strongly recommend you to use string types rather than binary types, this crate does _not_ force you to do so.
 /// The functions and trait implementations provided by this crate are all taking a neutral stand.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Arbitrary)]
 pub struct Str(pub Vec<u8>);
 
 impl From<String> for Str {
@@ -262,7 +282,7 @@ impl Str {
 /// Byte array type.
 ///
 /// As noted in the comment in [Str], using this type in this crate is almost nonsense, unless your data schema is shared by some external data providers.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Arbitrary)]
 pub struct Bin(pub Vec<u8>);
 
 impl Bin {
@@ -272,7 +292,7 @@ impl Bin {
 }
 
 /// User-extended type.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Arbitrary)]
 pub struct Ext {
     pub r#type: i8,
     pub data: Vec<u8>,
@@ -486,6 +506,34 @@ impl TryFrom<Value> for Vec<(Value, Value)> {
             Value::Map(v) => Ok(v),
             _ => Err(TryFromValueError(())),
         }
+    }
+}
+
+impl Arbitrary for Value {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Value>;
+
+    fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
+        fn arb_value() -> BoxedStrategy<Value> {
+            let leaf = prop_oneof![
+                Just(Value::Nil),
+                any::<bool>().prop_map(Value::Bool),
+                any::<Int>().prop_map(Value::Int),
+                any::<f32>().prop_map(Value::F32),
+                any::<f64>().prop_map(Value::F64),
+                any::<Str>().prop_map(Value::Str),
+                any::<Bin>().prop_map(Value::Bin),
+                any::<Ext>().prop_map(Value::Ext),
+            ];
+            leaf.prop_recursive(8, 256, 10, |inner| {
+                prop_oneof![
+                    prop::collection::vec(inner.clone(), 0..10).prop_map(Value::Array),
+                    prop::collection::vec((inner.clone(), inner), 0..10).prop_map(Value::Map),
+                ]
+            })
+            .boxed()
+        }
+        arb_value()
     }
 }
 
@@ -902,5 +950,17 @@ mod tests {
         );
 
         assert_eq!(Value::Array(vec![msgpack!(-42)]), msgpack!([-42]));
+    }
+
+    proptest! {
+        #[test]
+        fn no_panic_arb_int(_ in any::<Int>()) {
+            // pass
+        }
+
+        #[test]
+        fn no_panic_arb_value(_ in any::<Value>()) {
+            // pass
+        }
     }
 }
