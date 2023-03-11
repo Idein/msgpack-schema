@@ -71,6 +71,8 @@ cat <<< "$(bump_changelog CHANGELOG.md)" > CHANGELOG.md
 # shellcheck disable=SC2094
 cat <<< "$(bump_manifest msgpack-schema-impl/Cargo.toml)" > msgpack-schema-impl/Cargo.toml
 # shellcheck disable=SC2094
+cat <<< "$(bump_manifest msgpack-value/Cargo.toml)" > msgpack-value/Cargo.toml
+# shellcheck disable=SC2094
 cat <<< "$(bump_manifest Cargo.toml)" > Cargo.toml
 sed -i "s/version = \"=$VERSION\"/version = \"=$NEW_VERSION\"/g" Cargo.toml
 
