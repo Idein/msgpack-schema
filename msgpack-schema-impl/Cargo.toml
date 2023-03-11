@@ -1,6 +1,6 @@
 [package]
 name = "msgpack-schema-impl"
-version = "0.4.2"
+version = "0.5.0"
 authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
 edition = "2021"
 description = "Implementation detail of the msgpack-schema crate"
