@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Add `msgpack-value` crate
 - Implement `proptest::arbitrary::Arbitrary` for `msgpack_value::Value` and others
+- Implement `Serialize` and `Deserialize` for `Box`, `Rc`, and `Arc`
 
 ### Fixed
 
