@@ -650,6 +650,18 @@ impl<T: Serialize> Serialize for Box<T> {
     }
 }
 
+impl<T: Serialize> Serialize for std::rc::Rc<T> {
+    fn serialize(&self, serializer: &mut Serializer) {
+        serializer.serialize(&**self);
+    }
+}
+
+impl<T: Serialize> Serialize for std::sync::Arc<T> {
+    fn serialize(&self, serializer: &mut Serializer) {
+        serializer.serialize(&**self);
+    }
+}
+
 #[doc(hidden)]
 pub trait StructSerialize: Serialize {
     fn count_fields(&self) -> u32;
@@ -1084,6 +1096,18 @@ impl<T: Deserialize> Deserialize for Box<T> {
     }
 }
 
+impl<T: Deserialize> Deserialize for std::rc::Rc<T> {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Ok(Self::new(deserializer.deserialize()?))
+    }
+}
+
+impl<T: Deserialize> Deserialize for std::sync::Arc<T> {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Ok(Self::new(deserializer.deserialize()?))
+    }
+}
+
 /// Write out a MessagePack object.
 pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
     let mut serializer = Serializer::new();
@@ -1191,6 +1215,8 @@ mod tests {
     roundtrip!(roundtrip_str, String);
     roundtrip!(roundtrip_blob, Vec<i32>);
     roundtrip!(roundtrip_box, Box<i32>);
+    roundtrip!(roundtrip_rc, std::rc::Rc<i32>);
+    roundtrip!(roundtrip_arc, std::sync::Arc<i32>);
 
     roundtrip!(roundtrip_value, Value);
     roundtrip!(roundtrip_int, value::Int);
@@ -1287,5 +1313,15 @@ mod tests {
     #[test]
     fn box_vs_value() {
         check_serialize_result(Box::new(42i32), msgpack!(42));
+    }
+
+    #[test]
+    fn rc_vs_value() {
+        check_serialize_result(std::rc::Rc::new(42i32), msgpack!(42));
+    }
+
+    #[test]
+    fn arc_vs_value() {
+        check_serialize_result(std::sync::Arc::new(42i32), msgpack!(42));
     }
 }
