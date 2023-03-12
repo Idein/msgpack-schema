@@ -644,6 +644,12 @@ impl<T: Serialize> Serialize for Vec<T> {
     }
 }
 
+impl<T: Serialize> Serialize for Box<T> {
+    fn serialize(&self, serializer: &mut Serializer) {
+        serializer.serialize(&**self);
+    }
+}
+
 #[doc(hidden)]
 pub trait StructSerialize: Serialize {
     fn count_fields(&self) -> u32;
@@ -1072,6 +1078,12 @@ impl<T: Deserialize> Deserialize for Vec<T> {
     }
 }
 
+impl<T: Deserialize> Deserialize for Box<T> {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        Ok(Box::new(deserializer.deserialize()?))
+    }
+}
+
 /// Write out a MessagePack object.
 pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
     let mut serializer = Serializer::new();
@@ -1146,6 +1158,7 @@ impl Deserialize for Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use msgpack_value::msgpack;
     use proptest::prelude::*;
     use proptest_derive::Arbitrary;
 
@@ -1177,6 +1190,7 @@ mod tests {
     roundtrip!(roundtrip_f64, f64);
     roundtrip!(roundtrip_str, String);
     roundtrip!(roundtrip_blob, Vec<i32>);
+    roundtrip!(roundtrip_box, Box<i32>);
 
     roundtrip!(roundtrip_value, Value);
     roundtrip!(roundtrip_int, value::Int);
@@ -1250,18 +1264,28 @@ mod tests {
 
     roundtrip!(roundtrip_human, Human);
 
-    #[test]
-    fn compare_with_value() {
-        let val = Human {
-            age: 42,
-            name: "John".into(),
-        };
-        let buf1 = serialize(&val);
-        let lit = msgpack_value::msgpack!({
-            0: 42,
-            1: "John",
-        });
-        let buf2 = serialize(&lit);
+    fn check_serialize_result<T: Serialize>(x: T, v: Value) {
+        let buf1 = serialize(&x);
+        let buf2 = serialize(v);
         assert_eq!(buf1, buf2);
+    }
+
+    #[test]
+    fn struct_vs_value() {
+        check_serialize_result(
+            Human {
+                age: 42,
+                name: "John".into(),
+            },
+            msgpack!({
+                0: 42,
+                1: "John",
+            }),
+        );
+    }
+
+    #[test]
+    fn box_vs_value() {
+        check_serialize_result(Box::new(42i32), msgpack!(42));
     }
 }
