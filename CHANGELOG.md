@@ -8,19 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
-- Add `msgpack-value` crate
-- Implement `proptest::arbitrary::Arbitrary` for `msgpack_value::Value` and others
-- Implement `Serialize` and `Deserialize` for `Box`, `Rc`, and `Arc`
-
 ### Fixed
 
 ### Removed
 
 ### Changed
 
-- Add more tests
-
 ---
+
+## 0.5.0 - 2023-03-12
+
+### Added
+
+- Add `msgpack-value` crate
+- Implement `proptest::arbitrary::Arbitrary` for `msgpack_value::Value` and others
+- Implement `Serialize` and `Deserialize` for `Box`, `Rc`, and `Arc`
+
+### Changed
+
+- Add more tests
 
 ## 0.4.2 - 2022-01-25
 
