@@ -1,6 +1,6 @@
 use quote::ToTokens;
 use syn::{
-    parse::{Nothing, ParseStream, Parser},
+    parse::{ParseStream, Parser},
     Attribute, Error, LitInt, Result, Token,
 };
 
@@ -41,16 +41,16 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
     };
 
     for attr in attrs {
-        if attr.path.is_ident("schema") {
+        if attr.path().is_ident("schema") {
             parse_schema_attribute(&mut output, attr)?;
-        } else if attr.path.is_ident("tag") {
+        } else if attr.path().is_ident("tag") {
+            let name_value = attr.meta.require_name_value()?;
             let parser = |input: ParseStream| {
-                let _eq_token: Token![=] = input.parse()?;
                 let lit_int = input.parse::<LitInt>()?;
                 let tag = lit_int.base10_parse::<u32>()?;
                 Ok(tag)
             };
-            let tag = parser.parse2(attr.tokens.clone())?;
+            let tag = parser.parse2(name_value.value.to_token_stream())?;
             if output.tag.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[tag] attribute"));
             }
@@ -58,20 +58,20 @@ pub fn get(attrs: &[Attribute]) -> Result<Attrs> {
                 original: attr,
                 tag,
             })
-        } else if attr.path.is_ident("untagged") {
-            require_empty_attribute(attr)?;
+        } else if attr.path().is_ident("untagged") {
+            attr.meta.require_path_only()?;
             if output.untagged.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[untagged] attribute"));
             }
             output.untagged = Some(Untagged { original: attr });
-        } else if attr.path.is_ident("optional") {
-            require_empty_attribute(attr)?;
+        } else if attr.path().is_ident("optional") {
+            attr.meta.require_path_only()?;
             if output.optional.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[optional] attribute"));
             }
             output.optional = Some(Optional { original: attr });
-        } else if attr.path.is_ident("flatten") {
-            require_empty_attribute(attr)?;
+        } else if attr.path().is_ident("flatten") {
+            attr.meta.require_path_only()?;
             if output.flatten.is_some() {
                 return Err(Error::new_spanned(attr, "duplicate #[flatten] attribute"));
             }
@@ -130,11 +130,6 @@ fn parse_schema_attribute<'a>(output: &mut Attrs<'a>, attr: &'a Attribute) -> Re
         });
         Ok(())
     })
-}
-
-fn require_empty_attribute(attr: &Attribute) -> Result<()> {
-    syn::parse2::<Nothing>(attr.tokens.clone())?;
-    Ok(())
 }
 
 impl<'a> Attrs<'a> {
