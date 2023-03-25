@@ -70,6 +70,11 @@ jobs:
         run: |
           cargo clippy -- -D warnings
 
+      - name: Run cargo rdme
+        run: |
+          cargo install cargo-rdme
+          cargo rdme --check
+
   release:
     name: Release
     if: github.repository == 'Idein/msgpack-schema' && github.event_name == 'push' && github.ref == 'refs/heads/master'
