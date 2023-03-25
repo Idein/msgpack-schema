@@ -1,5 +1,7 @@
 # msgpack-schema [![Crates.io](https://img.shields.io/crates/v/msgpack-schema)](https://crates.io/crates/msgpack-schema) [![docs.rs](https://img.shields.io/docsrs/msgpack-schema)](https://docs.rs/msgpack-schema/) [![CI](https://github.com/Idein/msgpack-schema/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Idein/msgpack-schema/actions/workflows/ci.yml)
 
+<!-- cargo-rdme start -->
+
 _msgpack-schema_ is a schema language for describing data formats encoded in MessagePack.
 It provides two derive macros `Serialize` and `Deserialize` that allow you to transcode MessagePack binary data to/from Rust data structures in a type-directed way.
 
@@ -22,7 +24,6 @@ struct Human {
 
 - The deserializer ignores irrelevant key-value pairs in MsgPack map objects.
 - MsgPack map objects must not have duplicate keys.
-
 
 ### Structs with named fields
 
@@ -79,7 +80,6 @@ Fields in named structs may be tagged with `#[optional]`.
 The `#[flatten]` attribute is used to factor out a single definition of named struct into multiple ones.
 
 ```rust
-# use msgpack_schema::*;
 #[derive(Serialize)]
 struct S1 {
     #[tag = 1]
@@ -257,6 +257,7 @@ UNSUPPORTED
 ### Tuple structs
 
 Tuple structs with more than one element are encoded as an array.
+It is validation error to deserialize an array with unmatched length.
 
 <table>
 <tr>
@@ -461,6 +462,8 @@ E::Bar(42)
 </td>
 </tr>
 </table>
+
+<!-- cargo-rdme end -->
 
 #### License
 
