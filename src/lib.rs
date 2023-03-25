@@ -14,14 +14,14 @@
 //! }
 //! ```
 //!
-//! ## Behaviours of serializers and deserializers
+//! # Behaviours of serializers and deserializers
 //!
-//! ### Some general rules
+//! ## Some general rules
 //!
 //! - The deserializer ignores irrelevant key-value pairs in MsgPack map objects.
 //! - MsgPack map objects must not have duplicate keys.
 //!
-//! ### Structs with named fields
+//! ## Structs with named fields
 //!
 //! Structs with named fields will be serialized into a MsgPack map object whose keys are fixints specified by `#[tag]` attributes.
 //!
@@ -102,7 +102,7 @@
 //! assert_eq!(serialize(S2 { s1: S1 { x: 42 }, y: 43, }), serialize(S3 { x: 42, y: 43 }));
 //! ```
 //!
-//! ### Untagged structs with named fields
+//! ## Untagged structs with named fields
 //!
 //! Structs with named fields may be attached `#[untagged]`.
 //! Untagged structs are serialized into an array and will not contain tags.
@@ -148,7 +148,7 @@
 //! </tr>
 //! </table>
 //!
-//! ### Newtype structs
+//! ## Newtype structs
 //!
 //! Tuple structs with only one element are treated transparently.
 //!
@@ -164,7 +164,6 @@
 //! MessagePack
 //! </th>
 //! </tr>
-//! <tr>
 //! <tr>
 //! <td>
 //!
@@ -190,7 +189,7 @@
 //! </tr>
 //! </table>
 //!
-//! ### Unit structs and empty tuple structs
+//! ## Unit structs and empty tuple structs
 //!
 //! Serialization and deserialization of unit structs and empty tuple structs are currently unsupported.
 //!
@@ -206,7 +205,6 @@
 //! MessagePack
 //! </th>
 //! </tr>
-//! <tr>
 //! <tr>
 //! <td>
 //!
@@ -251,7 +249,7 @@
 //! </tr>
 //! </table>
 //!
-//! ### Tuple structs
+//! ## Tuple structs
 //!
 //! Tuple structs with more than one element are encoded as an array.
 //! It is validation error to deserialize an array with unmatched length.
@@ -268,7 +266,6 @@
 //! MessagePack
 //! </th>
 //! </tr>
-//! <tr>
 //! <tr>
 //! <td>
 //!
@@ -294,7 +291,7 @@
 //! </tr>
 //! </table>
 //!
-//! ### Unit variants and empty tuple variants
+//! ## Unit variants and empty tuple variants
 //!
 //! Unit variants and empty tuple variants are serialized into a single fixint whose value is determined by the tag.
 //!
@@ -310,7 +307,6 @@
 //! MessagePack
 //! </th>
 //! </tr>
-//! <tr>
 //! <tr>
 //! <td>
 //!
@@ -366,7 +362,7 @@
 //! </tr>
 //! </table>
 //!
-//! ### Newtype variants
+//! ## Newtype variants
 //!
 //! Newtype variants (one-element tuple variants) are serialized into an array of the tag and the inner value.
 //!
@@ -382,7 +378,6 @@
 //! MessagePack
 //! </th>
 //! </tr>
-//! <tr>
 //! <tr>
 //! <td>
 //!
@@ -411,7 +406,7 @@
 //! </tr>
 //! </table>
 //!
-//! ### Untagged variants
+//! ## Untagged variants
 //!
 //! Enums may be attached `#[untagged]` when all variants are newtype variants.
 //! Serializing untagged variants results in the same data layout as the inner type.
@@ -429,7 +424,6 @@
 //! MessagePack
 //! </th>
 //! </tr>
-//! <tr>
 //! <tr>
 //! <td>
 //!
