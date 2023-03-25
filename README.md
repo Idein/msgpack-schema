@@ -168,7 +168,6 @@ MessagePack
 </th>
 </tr>
 <tr>
-<tr>
 <td>
 
 ```rust
@@ -209,7 +208,6 @@ Rust
 MessagePack
 </th>
 </tr>
-<tr>
 <tr>
 <td>
 
@@ -272,7 +270,6 @@ MessagePack
 </th>
 </tr>
 <tr>
-<tr>
 <td>
 
 ```rust
@@ -313,7 +310,6 @@ Rust
 MessagePack
 </th>
 </tr>
-<tr>
 <tr>
 <td>
 
@@ -386,7 +382,6 @@ MessagePack
 </th>
 </tr>
 <tr>
-<tr>
 <td>
 
 ```rust
@@ -432,7 +427,6 @@ Rust
 MessagePack
 </th>
 </tr>
-<tr>
 <tr>
 <td>
 
