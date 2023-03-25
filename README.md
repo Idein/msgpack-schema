@@ -253,6 +253,51 @@ assert_eq!(serialize(&e), b);
 assert_eq!(e, deserialize(b).unwrap());
 ```
 
+## Write your own implementation of `Serialize` and `Deserialize`
+
+You may want to write your own implementation of `Serialize` and `Deserialize` in the following cases:
+
+1. You need `impl` for types that are already defined by someone.
+2. You need extreme efficiency.
+3. Both.
+
+[IpAddr](std::net::IpAddr) is such a type satisfying (3).
+In the most efficient situation, we want it to be 4 or 16 byte length plus one byte for a tag at any time.
+This is achieved by giving a hard-written implementation like below.
+
+```rust
+struct IpAddr(pub std::net::IpAddr);
+
+impl Serialize for IpAddr {
+    fn serialize(&self, serializer: &mut Serializer) {
+        match self.0 {
+            std::net::IpAddr::V4(v4) => {
+                serializer.serialize_str(&v4.octets()); // 5 bytes
+            }
+            std::net::IpAddr::V6(v6) => {
+                serializer.serialize_str(&v6.octets()); // 17 bytes
+            }
+        }
+    }
+}
+
+impl Deserialize for IpAddr {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+        let Str(data) = deserializer.deserialize()?;
+        let ipaddr = match data.len() {
+            4 => std::net::IpAddr::V4(std::net::Ipv4Addr::from(
+                <[u8; 4]>::try_from(&data[0..4]).unwrap(),
+            )),
+            16 => std::net::IpAddr::V6(std::net::Ipv6Addr::from(
+                <[u8; 16]>::try_from(&data[0..16]).unwrap(),
+            )),
+            _ => return Err(ValidationError.into()),
+        };
+        Ok(Self(ipaddr))
+    }
+}
+```
+
 ## Appendix: Cheatsheet
 
 <table>
