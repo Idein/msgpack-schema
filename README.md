@@ -253,6 +253,180 @@ assert_eq!(serialize(&e), b);
 assert_eq!(e, deserialize(b).unwrap());
 ```
 
+## Appendix: Cheatsheet
+
+<table>
+    <tr>
+        <th>schema</th>
+        <th>Rust</th>
+        <th>MessagePack (human readable)</th>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>struct S {
+    #[tag = 0]
+    x: u32,
+    #[tag = 1]
+    y: bool,
+}
+</code></pre>
+        </td>
+        <td>
+            <code>S { x: 42, y: true }</code>
+        </td>
+        <td>
+            <code>{ 0: 42, 1: true }</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>struct S {
+    #[optional]
+    #[tag = 0]
+    x: Option&lt;u32&gt;,
+}
+</code></pre>
+        </td>
+        <td>
+            <code>S { x: Some(42) }</code>
+        </td>
+        <td>
+            <code>{ 0: 42 }</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>struct S {
+    #[optional]
+    #[tag = 0]
+    x: Option&lt;u32&gt;,
+}
+</code></pre>
+        </td>
+        <td>
+            <code>S { x: None }</code>
+        </td>
+        <td>
+            <code>{}</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>#[untagged]
+struct S {
+    #[tag = 0]
+    x: u32,
+    #[tag = 1]
+    y: bool,
+}
+</code></pre>
+        </td>
+        <td>
+            <code>S { x: 42, y: true }</code>
+        </td>
+        <td>
+            <code>[ 42, true ]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>struct S(u32)</code>
+        </td>
+        <td>
+            <code>S(42)</code>
+        </td>
+        <td>
+            <code>42</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <code>struct S</code>
+        </td>
+        <td>
+            <code>S</code>
+        </td>
+        <td>UNSUPPORTED</td>
+    </tr>
+    <tr>
+        <td>
+            <code>struct S()</code>
+        </td>
+        <td>
+            <code>S()</code>
+        </td>
+        <td>UNSUPPORTED</td>
+    </tr>
+    <tr>
+        <td>
+            <code>struct S(u32, bool)</code>
+        </td>
+        <td>
+            <code>S(42, true)</code>
+        </td>
+        <td>
+            <code>[ 42, true ]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>enum E {
+    #[tag = 3]
+    Foo
+}</code></pre>
+        </td>
+        <td>
+            <code>E::Foo</code>
+        </td>
+        <td>
+            <code>3</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>enum E {
+    #[tag = 3]
+    Foo()
+}</code></pre>
+        </td>
+        <td>
+            <code>E::Foo()</code>
+        </td>
+        <td>
+            <code>3</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>enum E {
+    #[tag = 3]
+    Foo(u32)
+}</code></pre>
+        </td>
+        <td>
+            <code>E::Foo(42)</code>
+        </td>
+        <td>
+            <code>[ 3, 42 ]</code>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <pre><code>#[untagged]
+enum E {
+    Foo(u32)
+    Bar(bool)
+}</code></pre>
+        </td>
+        <td>
+            <code>E::Bar(true)</code>
+        </td>
+        <td>
+            <code>true</code>
+        </td>
+    </tr>
+</table>
+
 <!-- cargo-rdme end -->
 
 #### License
