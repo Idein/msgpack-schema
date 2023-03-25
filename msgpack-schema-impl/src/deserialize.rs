@@ -164,7 +164,7 @@ fn derive_struct(
                 match __tag {
                     #( #filters )*
                     _ => {
-                        let ::msgpack_schema::value::Any = __deserializer.deserialize()?;
+                        __deserializer.skip()?;
                     }
                 }
             }

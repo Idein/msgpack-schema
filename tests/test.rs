@@ -1,9 +1,20 @@
-use msgpack_schema::{
-    value::{Bin, Ext},
-    *,
-};
-use msgpack_value::{msgpack, Value};
+use msgpack_schema::*;
+use msgpack_value::{msgpack, Bin, Ext, Value};
 use proptest::prelude::*;
+
+mod value {
+    use super::*;
+
+    pub fn serialize<S: Serialize>(x: &S) -> Value {
+        let buf = crate::serialize(x);
+        crate::deserialize(&buf).unwrap()
+    }
+
+    pub fn deserialize<D: Deserialize>(value: Value) -> Result<D, DeserializeError> {
+        let buf = crate::serialize(value);
+        crate::deserialize::<D>(&buf)
+    }
+}
 
 #[test]
 fn failing() {
@@ -486,7 +497,10 @@ fn deserialize_struct_flatten() {
 
 #[test]
 fn serialize_deserialize_empty() {
-    let empty = value::Empty {};
+    #[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+    struct Empty {}
+
+    let empty = Empty {};
 
     assert_eq!(value::serialize(&empty), msgpack!({}));
 

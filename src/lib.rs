@@ -461,16 +461,15 @@
 //! </table>
 //!
 
-pub mod value;
 use byteorder::BigEndian;
 use byteorder::{self, ReadBytesExt};
 pub use msgpack_schema_impl::*;
 use msgpack_value::Value;
+use msgpack_value::{Bin, Ext, Int, Str};
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::io::{self, Write};
 use thiserror::Error;
-use value::{Bin, Ext, Int, Str};
 
 pub struct Serializer {
     w: Vec<u8>,
@@ -921,6 +920,31 @@ impl<'a> Deserializer<'a> {
     pub fn try_deserialize<D: Deserialize>(&mut self) -> Result<Option<D>, InvalidInputError> {
         D::try_deserialize(self)
     }
+
+    #[doc(hidden)]
+    pub fn skip(&mut self) -> Result<(), DeserializeError> {
+        let mut count = 1;
+        while count > 0 {
+            count -= 1;
+            match self.deserialize_token()? {
+                Token::Nil
+                | Token::Bool(_)
+                | Token::Int(_)
+                | Token::F32(_)
+                | Token::F64(_)
+                | Token::Str(_)
+                | Token::Bin(_)
+                | Token::Ext(_) => {}
+                Token::Array(len) => {
+                    count += len;
+                }
+                Token::Map(len) => {
+                    count += len * 2;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Error)]
@@ -1219,22 +1243,7 @@ mod tests {
     roundtrip!(roundtrip_arc, std::sync::Arc<i32>);
 
     roundtrip!(roundtrip_value, Value);
-    roundtrip!(roundtrip_int, value::Int);
-
-    #[test]
-    fn roundtrip_empty() {
-        use value::Empty;
-        assert_eq!(
-            Empty {},
-            deserialize(serialize(Empty {}).as_slice()).unwrap()
-        );
-    }
-
-    #[test]
-    fn roundtrip_nil() {
-        use value::Nil;
-        assert_eq!(Nil, deserialize(serialize(Nil).as_slice()).unwrap());
-    }
+    roundtrip!(roundtrip_int, Int);
 
     #[derive(Debug, PartialEq, Eq, Arbitrary)]
     struct Human {
@@ -1277,7 +1286,7 @@ mod tests {
                         name = Some(deserializer.deserialize()?);
                     }
                     _ => {
-                        let value::Any = deserializer.deserialize()?;
+                        deserializer.skip()?;
                     }
                 }
             }
