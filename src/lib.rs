@@ -919,13 +919,19 @@ impl<'a> Deserializer<'a> {
         D::deserialize(self)
     }
 
-    #[doc(hidden)]
     pub fn try_deserialize<D: Deserialize>(&mut self) -> Result<Option<D>, InvalidInputError> {
-        D::try_deserialize(self)
+        let mut branch = *self;
+        match branch.deserialize() {
+            Ok(v) => {
+                *self = branch;
+                Ok(Some(v))
+            }
+            Err(DeserializeError::Validation(_)) => Ok(None),
+            Err(DeserializeError::InvalidInput(err)) => Err(err),
+        }
     }
 
-    #[doc(hidden)]
-    pub fn skip(&mut self) -> Result<(), DeserializeError> {
+    pub fn deserialize_any(&mut self) -> Result<(), DeserializeError> {
         let mut count = 1;
         while count > 0 {
             count -= 1;
@@ -964,19 +970,6 @@ pub enum DeserializeError {
 
 pub trait Deserialize: Sized {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError>;
-
-    #[doc(hidden)]
-    fn try_deserialize(deserializer: &mut Deserializer) -> Result<Option<Self>, InvalidInputError> {
-        let mut deserializer2 = *deserializer;
-        match deserializer2.deserialize() {
-            Ok(v) => {
-                *deserializer = deserializer2;
-                Ok(Some(v))
-            }
-            Err(DeserializeError::Validation(_)) => Ok(None),
-            Err(DeserializeError::InvalidInput(err)) => Err(err),
-        }
-    }
 }
 
 impl Deserialize for bool {
@@ -1293,7 +1286,7 @@ mod tests {
                         name = Some(deserializer.deserialize()?);
                     }
                     _ => {
-                        deserializer.skip()?;
+                        deserializer.deserialize_any()?;
                     }
                 }
             }

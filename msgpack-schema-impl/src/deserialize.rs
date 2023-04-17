@@ -171,7 +171,7 @@ fn derive_struct(
                 match __tag {
                     #( #filters )*
                     _ => {
-                        __deserializer.skip()?;
+                        __deserializer.deserialize_any()?;
                     }
                 }
             }
