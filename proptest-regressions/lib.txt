@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b437da468d02ee1d0c25c1f324721a3d4078839b76e4ce2b74050b00dc7ba098 # shrinks to v = Map([(Nil, Map([(Str(Str([])), Nil)]))])
