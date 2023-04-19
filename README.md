@@ -54,9 +54,9 @@ assert_eq!(s, deserialize(b).unwrap());
 let b = b"\x83\x00\x2A\x02\xC3\x01\xA5\x68\x65\x6c\x6c\x6f"; // 12 bytes; `{ 0: 42, 2: true, 1: "hello" }`
 assert_eq!(s, deserialize(b).unwrap());
 
-// maps with duplicate keys are validation error
+// maps with duplicate keys are invalid input
 let b = b"\x83\x00\x2A\x00\xC3\x01\xA5\x68\x65\x6c\x6c\x6f"; // 12 bytes; `{ 0: 42, 0: true, 1: "hello" }`
-assert!(matches!(deserialize::<S>(b).unwrap_err(), DeserializeError::Validation(_)));
+assert!(matches!(deserialize::<S>(b).unwrap_err(), DeserializeError::InvalidInput(_)));
 ```
 
 Fields in named structs may be tagged with `#[optional]`.
