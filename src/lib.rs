@@ -303,10 +303,10 @@
 //!         let Str(data) = deserializer.deserialize()?;
 //!         let ipaddr = match data.len() {
 //!             4 => std::net::IpAddr::V4(std::net::Ipv4Addr::from(
-//!                 <[u8; 4]>::try_from(&data[0..4]).unwrap(),
+//!                 <[u8; 4]>::try_from(data).unwrap(),
 //!             )),
 //!             16 => std::net::IpAddr::V6(std::net::Ipv6Addr::from(
-//!                 <[u8; 16]>::try_from(&data[0..16]).unwrap(),
+//!                 <[u8; 16]>::try_from(data).unwrap(),
 //!             )),
 //!             _ => return Err(ValidationError.into()),
 //!         };
@@ -497,7 +497,7 @@ use msgpack_value::Value;
 use msgpack_value::{Bin, Ext, Int, Str};
 use std::convert::TryFrom;
 use std::convert::TryInto;
-use std::io::{self, Write};
+use std::io::Write;
 use thiserror::Error;
 
 pub struct Serializer {
@@ -697,33 +697,22 @@ pub trait StructSerialize: Serialize {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Token {
+pub enum Token<'a> {
     Nil,
     Bool(bool),
     Int(Int),
     F32(f32),
     F64(f64),
-    Str(Str),
-    Bin(Bin),
+    Str(&'a [u8]),
+    Bin(&'a [u8]),
     Array(u32),
     Map(u32),
-    Ext(Ext),
+    Ext { tag: i8, data: &'a [u8] },
 }
 
 #[derive(Debug, Error)]
 #[error("invalid input")]
 pub struct InvalidInputError;
-
-trait ReadExt: ReadBytesExt {
-    fn read_to_vec(&mut self, len: usize) -> Result<Vec<u8>, io::Error> {
-        let mut buf = vec![];
-        buf.resize(len, 0);
-        self.read_exact(&mut buf)?;
-        Ok(buf)
-    }
-}
-
-impl<R: io::Read> ReadExt for R {}
 
 #[derive(Clone, Copy)]
 pub struct Deserializer<'a> {
@@ -790,64 +779,57 @@ impl<'a> Deserializer<'a> {
             ),
             rmp::Marker::FixStr(len) => {
                 let len = len as usize;
-                Token::Str(Str(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Str(ret)
             }
             rmp::Marker::Str8 => {
                 let len = self.r.read_u8().map_err(|_| InvalidInputError)? as usize;
-                Token::Str(Str(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Str(ret)
             }
             rmp::Marker::Str16 => {
                 let len = self
                     .r
                     .read_u16::<BigEndian>()
                     .map_err(|_| InvalidInputError)? as usize;
-                Token::Str(Str(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Str(ret)
             }
             rmp::Marker::Str32 => {
                 let len = self
                     .r
                     .read_u32::<BigEndian>()
                     .map_err(|_| InvalidInputError)? as usize;
-                Token::Str(Str(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Str(ret)
             }
             rmp::Marker::Bin8 => {
                 let len = self.r.read_u8().map_err(|_| InvalidInputError)? as usize;
-                Token::Bin(Bin(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Bin(ret)
             }
             rmp::Marker::Bin16 => {
                 let len = self
                     .r
                     .read_u16::<BigEndian>()
                     .map_err(|_| InvalidInputError)? as usize;
-                Token::Bin(Bin(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Bin(ret)
             }
             rmp::Marker::Bin32 => {
                 let len = self
                     .r
                     .read_u32::<BigEndian>()
                     .map_err(|_| InvalidInputError)? as usize;
-                Token::Bin(Bin(self
-                    .r
-                    .read_to_vec(len)
-                    .map_err(|_| InvalidInputError)?))
+                let ret = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Bin(ret)
             }
             rmp::Marker::FixArray(len) => Token::Array(len as u32),
             rmp::Marker::Array16 => Token::Array(
@@ -873,46 +855,40 @@ impl<'a> Deserializer<'a> {
             ),
             rmp::Marker::FixExt1 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(1).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..1).ok_or(InvalidInputError)?;
+                self.r = self.r.get(1..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::FixExt2 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(2).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..2).ok_or(InvalidInputError)?;
+                self.r = self.r.get(2..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::FixExt4 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(4).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..4).ok_or(InvalidInputError)?;
+                self.r = self.r.get(4..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::FixExt8 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(8).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..8).ok_or(InvalidInputError)?;
+                self.r = self.r.get(8..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::FixExt16 => {
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(16).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..16).ok_or(InvalidInputError)?;
+                self.r = self.r.get(16..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::Ext8 => {
                 let len = self.r.read_u8().map_err(|_| InvalidInputError)? as usize;
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(len).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::Ext16 => {
                 let len = self
@@ -920,10 +896,9 @@ impl<'a> Deserializer<'a> {
                     .read_u16::<BigEndian>()
                     .map_err(|_| InvalidInputError)? as usize;
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(len).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::Ext32 => {
                 let len = self
@@ -931,10 +906,9 @@ impl<'a> Deserializer<'a> {
                     .read_u32::<BigEndian>()
                     .map_err(|_| InvalidInputError)? as usize;
                 let tag = self.r.read_i8().map_err(|_| InvalidInputError)?;
-                Token::Ext(Ext {
-                    r#type: tag,
-                    data: self.r.read_to_vec(len).map_err(|_| InvalidInputError)?,
-                })
+                let data = self.r.get(0..len).ok_or(InvalidInputError)?;
+                self.r = self.r.get(len..).unwrap();
+                Token::Ext { tag, data }
             }
             rmp::Marker::Reserved => return Err(InvalidInputError),
         };
@@ -963,7 +937,7 @@ impl<'a> Deserializer<'a> {
                 | Token::F64(_)
                 | Token::Str(_)
                 | Token::Bin(_)
-                | Token::Ext(_) => {}
+                | Token::Ext { .. } => {}
                 Token::Array(len) => {
                     count += len;
                 }
@@ -1116,7 +1090,7 @@ impl Deserialize for f64 {
 impl Deserialize for Str {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
         if let Token::Str(v) = deserializer.deserialize_token()? {
-            return Ok(v);
+            return Ok(Str(v.to_vec()));
         }
         Err(ValidationError.into())
     }
@@ -1210,8 +1184,8 @@ impl Deserialize for Value {
             Token::Int(v) => v.into(),
             Token::F32(v) => v.into(),
             Token::F64(v) => v.into(),
-            Token::Str(v) => v.into(),
-            Token::Bin(v) => v.into(),
+            Token::Str(v) => Str(v.to_vec()).into(),
+            Token::Bin(v) => Bin(v.to_vec()).into(),
             Token::Array(len) => {
                 let mut vec: Vec<Value> = vec![];
                 for _ in 0..len {
@@ -1226,7 +1200,11 @@ impl Deserialize for Value {
                 }
                 map.into()
             }
-            Token::Ext(v) => v.into(),
+            Token::Ext { tag, data } => Ext {
+                r#type: tag,
+                data: data.to_vec(),
+            }
+            .into(),
         };
         Ok(x)
     }
