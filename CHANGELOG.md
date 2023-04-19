@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 
 - Add more docs
+- Add `Deserializer::{try_deserialize, deserialize_any}`
 
 ### Fixed
 

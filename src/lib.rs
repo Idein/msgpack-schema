@@ -500,6 +500,7 @@ use std::convert::TryInto;
 use std::io::Write;
 use thiserror::Error;
 
+/// This type holds all intermediate states during serialization.
 pub struct Serializer {
     w: Vec<u8>,
 }
@@ -549,6 +550,7 @@ impl Serializer {
         self.w.write_all(data).unwrap();
     }
 
+    /// Equivalent to `S::serialize(&s, self)`.
     pub fn serialize<S: Serialize>(&mut self, s: S) {
         S::serialize(&s, self)
     }
@@ -710,10 +712,16 @@ pub enum Token<'a> {
     Ext { tag: i8, data: &'a [u8] },
 }
 
+/// This error type represents blob-to-MessegePack transcode errors.
+///
+/// This error type is raised during deserialization either
+/// 1. when (first bytes of) given binary data is not a message pack object, or
+/// 2. when it unexpectedly reaches the end of input.
 #[derive(Debug, Error)]
 #[error("invalid input")]
 pub struct InvalidInputError;
 
+/// This type holds all intermediate states during deserialization.
 #[derive(Clone, Copy)]
 pub struct Deserializer<'a> {
     r: &'a [u8],
@@ -915,17 +923,29 @@ impl<'a> Deserializer<'a> {
         Ok(token)
     }
 
+    /// Equivalent to `D::deserialize(self)`.
     pub fn deserialize<D: Deserialize>(&mut self) -> Result<D, DeserializeError> {
         D::deserialize(self)
     }
 
-    #[doc(hidden)]
+    /// Tries to deserialize an object of `D`.
+    /// If it succeeds it returns `Ok(Some(_))` and the internal state of `self` is changed.
+    /// If it fails with `ValidationError` it returns `Ok(None)` and the internal state of `self` is left unchanged.
+    /// If it fails with `InvalidInputError` it passes on the error.
     pub fn try_deserialize<D: Deserialize>(&mut self) -> Result<Option<D>, InvalidInputError> {
-        D::try_deserialize(self)
+        let mut branch = *self;
+        match branch.deserialize() {
+            Ok(v) => {
+                *self = branch;
+                Ok(Some(v))
+            }
+            Err(DeserializeError::Validation(_)) => Ok(None),
+            Err(DeserializeError::InvalidInput(err)) => Err(err),
+        }
     }
 
-    #[doc(hidden)]
-    pub fn skip(&mut self) -> Result<(), DeserializeError> {
+    /// Read any single message pack object and discard it.
+    pub fn deserialize_any(&mut self) -> Result<(), DeserializeError> {
         let mut count = 1;
         while count > 0 {
             count -= 1;
@@ -950,10 +970,12 @@ impl<'a> Deserializer<'a> {
     }
 }
 
+/// This error type represents type mismatch errors during deserialization.
 #[derive(Debug, Error)]
 #[error("validation failed")]
 pub struct ValidationError;
 
+/// This error type represents all possible errors during deserialization.
 #[derive(Debug, Error)]
 pub enum DeserializeError {
     #[error(transparent)]
@@ -964,19 +986,6 @@ pub enum DeserializeError {
 
 pub trait Deserialize: Sized {
     fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError>;
-
-    #[doc(hidden)]
-    fn try_deserialize(deserializer: &mut Deserializer) -> Result<Option<Self>, InvalidInputError> {
-        let mut deserializer2 = *deserializer;
-        match deserializer2.deserialize() {
-            Ok(v) => {
-                *deserializer = deserializer2;
-                Ok(Some(v))
-            }
-            Err(DeserializeError::Validation(_)) => Ok(None),
-            Err(DeserializeError::InvalidInput(err)) => Err(err),
-        }
-    }
 }
 
 impl Deserialize for bool {
@@ -1293,7 +1302,7 @@ mod tests {
                         name = Some(deserializer.deserialize()?);
                     }
                     _ => {
-                        deserializer.skip()?;
+                        deserializer.deserialize_any()?;
                     }
                 }
             }
