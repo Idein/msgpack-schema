@@ -26,7 +26,7 @@
 //! The deserializer interprets `Map` objects to create such structs.
 //! Field order is irrelevant to the result.
 //! If `Map` objects contains extra key-value pairs which are not contained in the definition of the struct, the deserializer simply ignores them.
-//! It is validation error when `Map` objects have two or more values with the same key.
+//! If there are two or more values with the same key within a `Map` object, the preceding value is overwritten by the last value.
 //!
 //! ```
 //! # use msgpack_schema::*;
@@ -52,9 +52,9 @@
 //! let b = b"\x83\x00\x2A\x02\xC3\x01\xA5\x68\x65\x6c\x6c\x6f"; // 12 bytes; `{ 0: 42, 2: true, 1: "hello" }`
 //! assert_eq!(s, deserialize(b).unwrap());
 //!
-//! // maps with duplicate keys are invalid input
-//! let b = b"\x83\x00\x2A\x00\xC3\x01\xA5\x68\x65\x6c\x6c\x6f"; // 12 bytes; `{ 0: 42, 0: true, 1: "hello" }`
-//! assert!(matches!(deserialize::<S>(b).unwrap_err(), DeserializeError::InvalidInput(_)));
+//! // last value wins
+//! let b = b"\x83\x00\xC3\x00\x2A\x01\xA5\x68\x65\x6c\x6c\x6f"; // 12 bytes; `{ 0: true, 0: 42, 1: "hello" }`
+//! assert_eq!(s, deserialize(b).unwrap());
 //! ```
 //!
 //! Fields in named structs may be tagged with `#[optional]`.
