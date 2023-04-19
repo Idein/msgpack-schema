@@ -124,10 +124,17 @@ fn derive_struct(
                 FieldKind::Ordinary(tag) | FieldKind::Optional(tag) => {
                     filters.push(quote! {
                         #tag => {
-                            if #ident.is_some() {
-                                return Err(::msgpack_schema::InvalidInputError.into());
+                            match __deserializer.deserialize() {
+                                Ok(value) => {
+                                    #ident = Some(value);
+                                }
+                                Err(::msgpack_schema::DeserializeError::Validation(_)) => {
+                                    #ident = None;
+                                }
+                                Err(e @ ::msgpack_schema::DeserializeError::InvalidInput(_)) => {
+                                    return Err(e);
+                                }
                             }
-                            #ident = Some(__deserializer.deserialize()?);
                         }
                     });
                 }

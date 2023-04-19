@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 
 - Turn `Token` into a non-owning type.
+- Use last-value-wins strategy for duplicate keys. (following JSON)
 
 ---
 

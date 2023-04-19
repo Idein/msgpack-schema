@@ -107,13 +107,44 @@ fn error_duplicate_tags() {
         name: String,
     }
 
-    let val = Value::Map(vec![
-        (Value::Int(0.into()), Value::Int(42.into())),
-        (Value::Int(0.into()), Value::Int(43.into())),
-        (Value::Int(2.into()), Value::Str("John".to_owned().into())),
-    ]);
+    let val = msgpack!({
+        0: 42,
+        0: 43,
+        2: "John",
+    });
 
-    assert!(value::deserialize::<Human>(val).is_err());
+    assert_eq!(
+        value::deserialize::<Human>(val).unwrap(),
+        Human {
+            age: 43,
+            name: "John".to_owned()
+        }
+    );
+
+    let val = msgpack!({
+        0: true,
+        0: 42,
+        2: "John",
+    });
+
+    assert_eq!(
+        value::deserialize::<Human>(val).unwrap(),
+        Human {
+            age: 42,
+            name: "John".to_owned()
+        }
+    );
+
+    let val = msgpack!({
+        0: 42,
+        0: true,
+        2: "John",
+    });
+
+    assert!(matches!(
+        value::deserialize::<Human>(val).unwrap_err(),
+        DeserializeError::Validation(_)
+    ));
 }
 
 #[test]
