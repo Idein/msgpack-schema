@@ -303,10 +303,10 @@
 //!         let Str(data) = deserializer.deserialize()?;
 //!         let ipaddr = match data.len() {
 //!             4 => std::net::IpAddr::V4(std::net::Ipv4Addr::from(
-//!                 <[u8; 4]>::try_from(&data[0..4]).unwrap(),
+//!                 <[u8; 4]>::try_from(data).unwrap(),
 //!             )),
 //!             16 => std::net::IpAddr::V6(std::net::Ipv6Addr::from(
-//!                 <[u8; 16]>::try_from(&data[0..16]).unwrap(),
+//!                 <[u8; 16]>::try_from(data).unwrap(),
 //!             )),
 //!             _ => return Err(ValidationError.into()),
 //!         };
