@@ -537,21 +537,3 @@ fn deserialize_tuple_struct_wrong_length() {
         msgpack_schema::DeserializeError::Validation(_)
     ));
 }
-
-#[test]
-fn deserialize_duplicate_keys_are_validation_error() {
-    #[derive(Deserialize, Debug)]
-    struct S {
-        #[tag = 0]
-        #[allow(dead_code)]
-        a: u32,
-    }
-    let v = msgpack!({
-        0: 1,
-        0: 2,
-    });
-    assert!(matches!(
-        value::deserialize::<S>(v).unwrap_err(),
-        msgpack_schema::DeserializeError::Validation(_)
-    ));
-}

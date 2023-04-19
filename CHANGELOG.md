@@ -12,8 +12,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Fixed
 
-- Duplicate keys are now ValidationError.
-
 ### Removed
 
 - Remove `msgpack_schema::value` module. Use `msgpack_value` instead.
