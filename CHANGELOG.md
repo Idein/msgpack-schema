@@ -8,10 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
+### Fixed
+
+### Removed
+
+### Changed
+
+---
+
+## 0.6.0 - 2023-04-21
+
+### Added
+
 - Add more docs
 - Add `Deserializer::{try_deserialize, deserialize_any}`
-
-### Fixed
 
 ### Removed
 
@@ -21,8 +31,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Turn `Token` into a non-owning type.
 - Use last-value-wins strategy for duplicate keys. (following JSON)
-
----
 
 ## 0.5.0 - 2023-03-12
 
