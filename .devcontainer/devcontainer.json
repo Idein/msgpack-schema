@@ -1,0 +1,5 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+	"name": "Default",
+	"image": "mcr.microsoft.com/devcontainers/rust:latest"
+}
