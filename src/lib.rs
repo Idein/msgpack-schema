@@ -1219,6 +1219,68 @@ impl Deserialize for Value {
     }
 }
 
+// for backward compatibility
+#[doc(hidden)]
+pub mod value {
+    use super::*;
+
+    pub use msgpack_value::{Bin, Ext, Int, Str, Value};
+
+    /// A special type for serializing and deserializing the `nil` object.
+    ///
+    /// In our data model `()` does not represent the `nil` object because `()` should be zero-byte but `nil` has a size.
+    /// When you want to serialize or deserialize `nil` use this type instead.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Nil;
+
+    impl Serialize for Nil {
+        fn serialize(&self, serializer: &mut Serializer) {
+            serializer.serialize_nil()
+        }
+    }
+
+    impl Deserialize for Nil {
+        fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+            let token = deserializer.deserialize_token()?;
+            if token != Token::Nil {
+                return Err(ValidationError.into());
+            }
+            Ok(Self)
+        }
+    }
+
+    /// A special type used to deserialize any object and discard it.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Any;
+
+    impl Deserialize for Any {
+        fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+            deserializer.deserialize_any()?;
+            Ok(Any)
+        }
+    }
+
+    /// A special type used to serialize and deserialize the empty map.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct Empty {}
+
+    impl Serialize for Empty {
+        fn serialize(&self, serializer: &mut Serializer) {
+            serializer.serialize_map(0)
+        }
+    }
+
+    impl Deserialize for Empty {
+        fn deserialize(deserializer: &mut Deserializer) -> Result<Self, DeserializeError> {
+            let token = deserializer.deserialize_token()?;
+            if token != Token::Map(0) {
+                return Err(ValidationError.into());
+            }
+            Ok(Self {})
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
