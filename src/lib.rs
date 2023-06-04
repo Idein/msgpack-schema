@@ -1224,7 +1224,7 @@ impl Deserialize for Value {
 pub mod value {
     use super::*;
 
-    pub use msgpack_value::{Value, Bin, Ext, Int, Str};
+    pub use msgpack_value::{Bin, Ext, Int, Str, Value};
 
     /// A special type for serializing and deserializing the `nil` object.
     ///
