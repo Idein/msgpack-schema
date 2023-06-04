@@ -8,8 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
-- Restore `msgpack_schema::value` as a hidden module.
-
 ### Fixed
 
 ### Removed
@@ -17,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 
 ---
+
+## 0.7.0 - 2023-06-04
+
+### Added
+
+- Restore `msgpack_schema::value` as a hidden module.
 
 ## 0.6.0 - 2023-04-21
 
