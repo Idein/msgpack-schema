@@ -2,6 +2,7 @@
 use proptest::prelude::*;
 use proptest_derive::Arbitrary;
 use std::convert::{TryFrom, TryInto};
+use std::ops::Index;
 use thiserror::Error;
 
 /// Integer ranging from `-(2^63)` to `(2^64)-1`.
@@ -435,6 +436,35 @@ impl From<Vec<Value>> for Value {
 impl From<Vec<(Value, Value)>> for Value {
     fn from(v: Vec<(Value, Value)>) -> Self {
         Self::Map(v)
+    }
+}
+
+impl Index<&str> for Value {
+    type Output = Value;
+    fn index(&self, index: &str) -> &Self::Output {
+        let converted = self
+            .as_map()
+            .expect("This doesn't look like a map, which is indexed by `&str`.");
+        let search_key = Value::from(index);
+        let mut found_value: Option<&Value> = None;
+        for (key, value) in converted {
+            if key == &search_key {
+                found_value = Some(value);
+                break;
+            }
+        }
+        found_value.expect("There's no such key in this map")
+    }
+}
+
+impl Index<i32> for Value {
+    type Output = Value;
+    fn index(&self, index: i32) -> &Self::Output {
+        let converted = self
+            .as_array()
+            .expect("This doesn't look like an array, which is indexed by `i32`.");
+        let found_value = converted.get(index as usize);
+        found_value.expect("There's no such index in this array")
     }
 }
 
