@@ -457,13 +457,13 @@ impl Index<&str> for Value {
     }
 }
 
-impl Index<i32> for Value {
+impl Index<usize> for Value {
     type Output = Value;
-    fn index(&self, index: i32) -> &Self::Output {
+    fn index(&self, index: usize) -> &Self::Output {
         let converted = self
             .as_array()
-            .expect("This doesn't look like an array, which is indexed by `i32`.");
-        let found_value = converted.get(index as usize);
+            .expect("This doesn't look like an array, which is indexed by `usize`.");
+        let found_value = converted.get(index);
         found_value.expect("There's no such index in this array")
     }
 }
