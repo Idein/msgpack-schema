@@ -277,6 +277,10 @@ impl Str {
     pub fn into_bytes(self) -> Vec<u8> {
         self.0
     }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
 }
 
 /// Byte array type.
@@ -288,6 +292,10 @@ pub struct Bin(pub Vec<u8>);
 impl Bin {
     pub fn into_bytes(self) -> Vec<u8> {
         self.0
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        &self.0
     }
 }
 
@@ -487,6 +495,35 @@ where
     fn index(&self, index: T) -> &Self::Output {
         index.index(self)
     }
+}
+
+#[test]
+fn test_index() {
+    let v = msgpack!({ 0: 1, "foo" : "bar", "foo" : "baz" });
+    let k = &v["foo"];
+    assert_eq!(k.as_str().unwrap().as_bytes(), "bar".as_bytes());
+
+    let v = msgpack!([ "foo", "bar", "baz" ]);
+    let k = &v[1];
+    assert_eq!(k.as_str().unwrap().as_bytes(), "bar".as_bytes());
+}
+
+#[test]
+#[should_panic]
+fn test_index_panic_array_index_by_str() {
+    let _ = msgpack!([])["foo"];
+}
+
+#[test]
+#[should_panic]
+fn test_index_panic_array_out_of_range() {
+    let _ = msgpack!([])[0];
+}
+
+#[test]
+#[should_panic]
+fn test_index_panic_map_key_not_found() {
+    let _ = msgpack!({"foo":"bar"})["baz"];
 }
 
 /// Error type returned by `TryFrom<Value>` implementations.
