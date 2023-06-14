@@ -464,6 +464,12 @@ impl Index for str {
     }
 }
 
+impl Index for String {
+    fn index<'a>(&self, v: &'a Value) -> &'a Value {
+        self.as_str().index(v)
+    }
+}
+
 impl Index for usize {
     fn index<'a>(&self, v: &'a Value) -> &'a Value {
         let array = v
