@@ -2,7 +2,6 @@
 use proptest::prelude::*;
 use proptest_derive::Arbitrary;
 use std::convert::{TryFrom, TryInto};
-use std::ops::Index;
 use thiserror::Error;
 
 /// Integer ranging from `-(2^63)` to `(2^64)-1`.
@@ -439,13 +438,22 @@ impl From<Vec<(Value, Value)>> for Value {
     }
 }
 
-impl Index<&str> for Value {
-    type Output = Value;
-    fn index(&self, index: &str) -> &Self::Output {
-        let converted = self
+pub trait Index {
+    fn index<'a>(&self, v: &'a Value) -> &'a Value;
+}
+
+impl<T: Index> Index for &T {
+    fn index<'a>(&self, v: &'a Value) -> &'a Value {
+        (*self).index(v)
+    }
+}
+
+impl Index for str {
+    fn index<'a>(&self, v: &'a Value) -> &'a Value {
+        let converted = v
             .as_map()
             .expect("This doesn't look like a map, which is indexed by `&str`.");
-        let search_key = Value::from(index);
+        let search_key = Value::from(self);
         let mut found_value: Option<&Value> = None;
         for (key, value) in converted {
             if key == &search_key {
@@ -457,14 +465,23 @@ impl Index<&str> for Value {
     }
 }
 
-impl Index<usize> for Value {
-    type Output = Value;
-    fn index(&self, index: usize) -> &Self::Output {
-        let converted = self
+impl Index for usize {
+    fn index<'a>(&self, v: &'a Value) -> &'a Value {
+        let converted = v
             .as_array()
             .expect("This doesn't look like an array, which is indexed by `usize`.");
-        let found_value = converted.get(index);
+        let found_value = converted.get(*self);
         found_value.expect("There's no such index in this array")
+    }
+}
+
+impl<T> core::ops::Index<T> for Value
+where
+    T: Index
+{
+    type Output = Value;
+    fn index(&self, index: T) -> &Self::Output {
+        index.index(self)
     }
 }
 
