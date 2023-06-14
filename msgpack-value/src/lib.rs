@@ -450,28 +450,26 @@ impl<T: Index> Index for &T {
 
 impl Index for str {
     fn index<'a>(&self, v: &'a Value) -> &'a Value {
-        let converted = v
+        let map = v
             .as_map()
-            .expect("This doesn't look like a map, which is indexed by `&str`.");
-        let search_key = Value::from(self);
-        let mut found_value: Option<&Value> = None;
-        for (key, value) in converted {
-            if key == &search_key {
-                found_value = Some(value);
-                break;
+            .expect("this type of object is not indexable by str");
+        for (key, value) in map {
+            if let Some(Str(key)) = key.as_str() {
+                if key == self.as_bytes() {
+                    return value;
+                }
             }
         }
-        found_value.expect("There's no such key in this map")
+        panic!("key not found in object");
     }
 }
 
 impl Index for usize {
     fn index<'a>(&self, v: &'a Value) -> &'a Value {
-        let converted = v
+        let array = v
             .as_array()
-            .expect("This doesn't look like an array, which is indexed by `usize`.");
-        let found_value = converted.get(*self);
-        found_value.expect("There's no such index in this array")
+            .expect("this type of object is not indexable by usize");
+        &array[*self]
     }
 }
 
