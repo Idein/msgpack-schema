@@ -442,7 +442,7 @@ pub trait Index {
     fn index<'a>(&self, v: &'a Value) -> &'a Value;
 }
 
-impl<T: Index> Index for &T {
+impl<T: Index + ?Sized> Index for &T {
     fn index<'a>(&self, v: &'a Value) -> &'a Value {
         (*self).index(v)
     }
