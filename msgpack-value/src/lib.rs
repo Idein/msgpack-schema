@@ -489,7 +489,7 @@ impl Index for usize {
 
 impl<T> core::ops::Index<T> for Value
 where
-    T: Index
+    T: Index,
 {
     type Output = Value;
     fn index(&self, index: T) -> &Self::Output {
@@ -503,7 +503,7 @@ fn test_index() {
     let k = &v["foo"];
     assert_eq!(k.as_str().unwrap().as_bytes(), "bar".as_bytes());
 
-    let v = msgpack!([ "foo", "bar", "baz" ]);
+    let v = msgpack!(["foo", "bar", "baz"]);
     let k = &v[1];
     assert_eq!(k.as_str().unwrap().as_bytes(), "bar".as_bytes());
 }
