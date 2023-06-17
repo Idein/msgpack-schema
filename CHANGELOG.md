@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
+- Add `Index` impls for `msgpack_value::Value`
+
 ### Fixed
 
 ### Removed
