@@ -461,7 +461,7 @@ impl Index for str {
         let map = v
             .as_map()
             .expect("this type of object is not indexable by str");
-        for (key, value) in map {
+        for (key, value) in map.iter().rev() {
             if let Some(Str(key)) = key.as_str() {
                 if key == self.as_bytes() {
                     return value;
