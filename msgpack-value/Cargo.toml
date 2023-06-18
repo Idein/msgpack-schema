@@ -1,6 +1,6 @@
 [package]
 name = "msgpack-value"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
 edition = "2021"
 description = "Types and macros for the MessagePack data model"
