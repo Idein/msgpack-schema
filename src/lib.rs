@@ -1152,9 +1152,19 @@ pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
 }
 
 /// Read out a MessagePack object.
+/// 
+/// If the input contains extra bytes following to a valid msgpack object,
+/// this function silently ignores them.
 pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
     let mut deserializer = Deserializer::new(r);
     deserializer.deserialize()
+}
+
+#[test]
+fn deserialize_ignores_extra_bytes() {
+    let input: Vec<u8> = vec![0x01, 0xc1];
+    let v: Int = deserialize(&input).unwrap();
+    assert_eq!(v, Int::from(1u32));
 }
 
 impl Serialize for Value {
