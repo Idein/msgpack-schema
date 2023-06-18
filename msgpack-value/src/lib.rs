@@ -501,7 +501,8 @@ where
 fn test_index() {
     let v = msgpack!({ 0: 1, "foo" : "bar", "foo" : "baz" });
     let k = &v["foo"];
-    assert_eq!(k.as_str().unwrap().as_bytes(), "bar".as_bytes());
+    // last value wins
+    assert_eq!(k.as_str().unwrap().as_bytes(), "baz".as_bytes());
 
     let v = msgpack!(["foo", "bar", "baz"]);
     let k = &v[1];
