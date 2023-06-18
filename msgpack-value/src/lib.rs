@@ -461,7 +461,7 @@ impl Index for str {
         let map = v
             .as_map()
             .expect("this type of object is not indexable by str");
-        for (key, value) in map {
+        for (key, value) in map.iter().rev() {
             if let Some(Str(key)) = key.as_str() {
                 if key == self.as_bytes() {
                     return value;
@@ -501,7 +501,8 @@ where
 fn test_index() {
     let v = msgpack!({ 0: 1, "foo" : "bar", "foo" : "baz" });
     let k = &v["foo"];
-    assert_eq!(k.as_str().unwrap().as_bytes(), "bar".as_bytes());
+    // last value wins
+    assert_eq!(k.as_str().unwrap().as_bytes(), "baz".as_bytes());
 
     let v = msgpack!(["foo", "bar", "baz"]);
     let k = &v[1];
