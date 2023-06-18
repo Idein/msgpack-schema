@@ -308,8 +308,9 @@ pub struct Ext {
     pub data: Vec<u8>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub enum Value {
+    #[default]
     Nil,
     Bool(bool),
     Int(Int),
