@@ -1,5 +1,5 @@
 //! The MessagePack Data Model
-//! 
+//!
 //! See also the [specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
 use proptest::prelude::*;
 use proptest_derive::Arbitrary;
@@ -495,17 +495,17 @@ where
 {
     type Output = Value;
     /// Accessing inner values of `value` using indexing `value[0]` or `value["foo"]`.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This function panics when `self` does not contain given key.
-    /// 
+    ///
     /// # Duplicate keys
-    /// 
+    ///
     /// If `self` is a map object and contains two or more keys matching against the given index,
     /// indexing works as if the preceding keys do not exist in the object.
     /// This is the same behaviour as [what EMCA-262 specifies](https://stackoverflow.com/a/23195243).
-    /// 
+    ///
     /// ```
     /// # use msgpack_value::{msgpack, Int};
     /// let v = msgpack!({ "a" : 0, "a" : 1 });

@@ -1152,7 +1152,7 @@ pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
 }
 
 /// Read out a MessagePack object.
-/// 
+///
 /// If the input contains extra bytes following a valid msgpack object,
 /// this function silently ignores them.
 pub fn deserialize<D: Deserialize>(r: &[u8]) -> Result<D, DeserializeError> {
