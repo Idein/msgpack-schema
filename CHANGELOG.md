@@ -8,9 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
-- Add more docs
-- Add `impl Default for Value`
-
 ### Fixed
 
 ### Removed
@@ -18,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 
 ---
+
+## 1.0.0 - 2023-06-21
+
+### Added
+
+- Add more docs
+- Add `impl Default for Value`
 
 ## 0.8.1 - 2023-06-18
 
