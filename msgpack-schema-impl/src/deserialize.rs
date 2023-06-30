@@ -125,7 +125,7 @@ fn derive_struct(
                     filters.push(quote! {
                         #tag => {
                             match __deserializer.deserialize() {
-                                Ok(value) => {
+                                Ok(__value) => {
                                     #ident = Some(value);
                                 }
                                 Err(::msgpack_schema::DeserializeError::Validation(_)) => {
