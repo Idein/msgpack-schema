@@ -125,14 +125,14 @@ fn derive_struct(
                     filters.push(quote! {
                         #tag => {
                             match __deserializer.deserialize() {
-                                Ok(value) => {
-                                    #ident = Some(value);
+                                Ok(__value) => {
+                                    #ident = Some(__value);
                                 }
                                 Err(::msgpack_schema::DeserializeError::Validation(_)) => {
                                     #ident = None;
                                 }
-                                Err(e @ ::msgpack_schema::DeserializeError::InvalidInput(_)) => {
-                                    return Err(e);
+                                Err(__e @ ::msgpack_schema::DeserializeError::InvalidInput(_)) => {
+                                    return Err(__e);
                                 }
                             }
                         }
@@ -163,7 +163,7 @@ fn derive_struct(
             #( #init )*
 
             let __len = match __deserializer.deserialize_token()? {
-                ::msgpack_schema::Token::Map(len) => len,
+                ::msgpack_schema::Token::Map(__len) => __len,
                 _ => return Err(::msgpack_schema::ValidationError.into()),
             };
             for _ in 0..__len {
@@ -249,8 +249,8 @@ fn derive_tuple_struct(
 
     let fn_body = quote! {
         match __deserializer.deserialize_token()? {
-            ::msgpack_schema::Token::Array(len) => {
-                if len != #count {
+            ::msgpack_schema::Token::Array(__len) => {
+                if __len != #count {
                     return Err(::msgpack_schema::ValidationError.into())
                 }
             },
@@ -345,8 +345,8 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
 
         quote! {
             let (__tag, __is_array): (u32, bool) = match __deserializer.deserialize_token()? {
-                ::msgpack_schema::Token::Int(v) => {
-                    (<u32 as ::std::convert::TryFrom<_>>::try_from(v).map_err(|_| ::msgpack_schema::ValidationError)?, false)
+                ::msgpack_schema::Token::Int(__v) => {
+                    (<u32 as ::std::convert::TryFrom<_>>::try_from(__v).map_err(|_| ::msgpack_schema::ValidationError)?, false)
                 }
                 ::msgpack_schema::Token::Array(len) => {
                     if len != 2 {
@@ -432,8 +432,8 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
             let ident = variant.ident.clone();
             let ty = field.ty.clone();
             clauses.push(quote! {
-                if let Some(x) = __deserializer.try_deserialize::<#ty>()? {
-                    return Ok(Self::#ident(x));
+                if let Some(__x) = __deserializer.try_deserialize::<#ty>()? {
+                    return Ok(Self::#ident(__x));
                 }
             })
         }
@@ -497,7 +497,7 @@ fn derive_untagged_struct(
 
         quote! {
             let __len = match __deserializer.deserialize_token()? {
-                Token::Array(len) => len,
+                Token::Array(__len) => __len,
                 _ => return Err(::msgpack_schema::ValidationError.into()),
             };
 
