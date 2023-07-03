@@ -570,15 +570,59 @@ fn deserialize_tuple_struct_wrong_length() {
 }
 
 #[test]
-fn regression_test_variable_capture1() {
+fn regression_test_variable_capture() {
     #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
     struct S {
         #[tag = 0]
         value: i32,
+        #[tag = 1]
+        serializer: i32,
+        #[tag = 2]
+        deserializer: i32,
+        #[tag = 3]
+        tag: i32,
+        #[tag = 4]
+        max_len: i32,
+        #[tag = 5]
+        len: i32,
+        #[tag = 6]
+        e: i32,
+        #[tag = 7]
+        count: i32,
+        #[tag = 8]
+        v: i32,
+        #[tag = 9]
+        ident: i32,
+        #[tag = 10]
+        r#type: i32,
     }
-    let v = msgpack!({0:123});
+    let v = msgpack!({
+        0:123,
+        1:456,
+        2:789,
+        3:123,
+        4:456,
+        5:789,
+        6:123,
+        7:456,
+        8:789,
+        9:123,
+        10:456,
+    });
     assert!(matches!(
         value::deserialize::<S>(v).unwrap(),
-        S { value: 123 }
+        S {
+            value: 123,
+            serializer: 456,
+            deserializer: 789,
+            tag: 123,
+            max_len: 456,
+            len: 789,
+            e: 123,
+            count: 456,
+            v: 789,
+            ident: 123,
+            r#type: 456,
+        }
     ));
 }
