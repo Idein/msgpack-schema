@@ -106,14 +106,14 @@ fn derive_struct(
             match kind {
                 FieldKind::Flatten => {
                     decs.push(quote! {
-                        __max_len -= 1;
-                        __max_len += <#ty as ::msgpack_schema::StructSerialize>::count_fields(&self.#ident);
+                        max_len -= 1;
+                        max_len += <#ty as ::msgpack_schema::StructSerialize>::count_fields(&self.#ident);
                     });
                 }
                 FieldKind::Optional(_) => {
                     decs.push(quote! {
                         if self.#ident.is_none() {
-                            __max_len -= 1;
+                            max_len -= 1;
                         }
                     });
                 }
@@ -122,9 +122,9 @@ fn derive_struct(
         }
 
         quote! {
-            let mut __max_len: u32 = #max_len;
+            let mut max_len: u32 = #max_len;
             #( #decs )*
-            __max_len
+            max_len
         }
     };
 
@@ -134,21 +134,21 @@ fn derive_struct(
             let code = match kind {
                 FieldKind::Ordinary(tag) => {
                     quote! {
-                        __serializer.serialize(#tag);
-                        __serializer.serialize(&self.#ident);
+                        serializer.serialize(#tag);
+                        serializer.serialize(&self.#ident);
                     }
                 }
                 FieldKind::Optional(tag) => {
                     quote! {
-                        if let Some(__value) = &self.#ident {
-                            __serializer.serialize(#tag);
-                            __serializer.serialize(__value);
+                        if let Some(value) = &self.#ident {
+                            serializer.serialize(#tag);
+                            serializer.serialize(value);
                         }
                     }
                 }
                 FieldKind::Flatten => {
                     quote! {
-                        <#ty as ::msgpack_schema::StructSerialize>::serialize_fields(&self.#ident, __serializer);
+                        <#ty as ::msgpack_schema::StructSerialize>::serialize_fields(&self.#ident, serializer);
                     }
                 }
             };
@@ -163,10 +163,10 @@ fn derive_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
-            fn serialize(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 let count = <Self as ::msgpack_schema::StructSerialize>::count_fields(self);
-                __serializer.serialize_map(count);
-                <Self as ::msgpack_schema::StructSerialize>::serialize_fields(self, __serializer);
+                serializer.serialize_map(count);
+                <Self as ::msgpack_schema::StructSerialize>::serialize_fields(self, serializer);
             }
         }
 
@@ -176,7 +176,7 @@ fn derive_struct(
                 #count_fields_body
             }
 
-            fn serialize_fields(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize_fields(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #serialize_fields_body
             }
         }
@@ -200,13 +200,13 @@ fn derive_newtype_struct(
     attrs.disallow_flatten()?;
 
     let fn_body = quote! {
-        __serializer.serialize(&self.0);
+        serializer.serialize(&self.0);
     };
 
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
-            fn serialize(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -235,14 +235,14 @@ fn derive_tuple_struct(
     let field_specs = (0..count).map(|n| TokenStream::from_str(&format!("{}", n)).unwrap());
 
     let fn_body = quote! {
-        __serializer.serialize_array(#count);
-        #( __serializer.serialize(&self.#field_specs); )*
+        serializer.serialize_array(#count);
+        #( serializer.serialize(&self.#field_specs); )*
     };
 
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
-            fn serialize(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -280,7 +280,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                         0 => {
                             clauses.push(quote! {
                                 Self::#ident() => {
-                                    __serializer.serialize(#tag);
+                                    serializer.serialize(#tag);
                                 }
                             });
                         }
@@ -291,10 +291,10 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                             attrs.disallow_untagged()?;
                             attrs.disallow_flatten()?;
                             clauses.push(quote! {
-                                Self::#ident(__value) => {
-                                    __serializer.serialize_array(2);
-                                    __serializer.serialize(#tag);
-                                    __serializer.serialize(__value);
+                                Self::#ident(value) => {
+                                    serializer.serialize_array(2);
+                                    serializer.serialize(#tag);
+                                    serializer.serialize(value);
                                 }
                             });
                         }
@@ -309,7 +309,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
                 Fields::Unit => {
                     clauses.push(quote! {
                         Self::#ident => {
-                            __serializer.serialize(#tag);
+                            serializer.serialize(#tag);
                         }
                     });
                 }
@@ -326,7 +326,7 @@ fn derive_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStream> {
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
-            fn serialize(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -389,8 +389,8 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
         for (variant, _field) in &members {
             let ident = variant.ident.clone();
             clauses.push(quote! {
-                Self::#ident(__value) => {
-                    __serializer.serialize(__value)
+                Self::#ident(value) => {
+                    serializer.serialize(value)
                 }
             });
         }
@@ -405,7 +405,7 @@ fn derive_untagged_enum(node: &DeriveInput, enu: &DataEnum) -> Result<TokenStrea
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
-            fn serialize(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
@@ -439,13 +439,13 @@ fn derive_untagged_struct(
         let mut pushes = vec![];
         for ident in &members {
             let push = quote! {
-                __serializer.serialize(&self.#ident);
+                serializer.serialize(&self.#ident);
             };
             pushes.push(push);
         }
 
         quote! {
-            __serializer.serialize_array(#len);
+            serializer.serialize_array(#len);
             #( #pushes )*
         }
     };
@@ -453,7 +453,7 @@ fn derive_untagged_struct(
     let gen = quote! {
         #[allow(unused_qualifications)]
         impl #impl_generics ::msgpack_schema::Serialize for #ty #ty_generics #where_clause {
-            fn serialize(&self, __serializer: &mut ::msgpack_schema::Serializer) {
+            fn serialize(&self, serializer: &mut ::msgpack_schema::Serializer) {
                 #fn_body
             }
         }
