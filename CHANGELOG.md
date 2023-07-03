@@ -9,17 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Added
 
 ### Fixed
+- Fix Variable Capture bug for "value" struct field name
 
 ### Removed
 
 ### Changed
 
 ---
-
-## 1.0.1 - 2023-07-03
-
-### Fixed
-- Fix Variable Capture bug for "value" struct field name
 
 ## 1.0.0 - 2023-06-21
 
