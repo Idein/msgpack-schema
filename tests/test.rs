@@ -568,3 +568,17 @@ fn deserialize_tuple_struct_wrong_length() {
         msgpack_schema::DeserializeError::Validation(_)
     ));
 }
+
+#[test]
+fn regression_test_variable_capture1() {
+    #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
+    struct S {
+        #[tag = 0]
+        value: i32,
+    }
+    let v = msgpack!({0:123});
+    assert!(matches!(
+        value::deserialize::<S>(v).unwrap(),
+        S { value: 123 }
+    ));
+}
