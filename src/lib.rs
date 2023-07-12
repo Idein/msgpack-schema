@@ -509,7 +509,10 @@ impl Serializer {
     fn new() -> Self {
         Self { w: vec![] }
     }
-    fn into_inner(self) -> Vec<u8> {
+    pub fn with_vec(w: Vec<u8>) -> Self {
+        Self { w }
+    }
+    pub fn into_inner(self) -> Vec<u8> {
         self.w
     }
 
