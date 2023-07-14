@@ -25,3 +25,4 @@ byteorder = "1"
 trybuild = "1.0"
 proptest = "1"
 proptest-derive = "0.3"
+msgpack-value = { version = "=1.0.1", path = "./msgpack-value", features = ["proptest"] }
