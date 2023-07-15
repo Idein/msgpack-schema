@@ -1434,4 +1434,11 @@ mod tests {
     fn arc_vs_value() {
         check_serialize_result(std::sync::Arc::new(42i32), msgpack!(42));
     }
+
+    #[test]
+    fn serialize_into_keeps_buf() {
+        let mut buf = vec![0x12, 0x34, 0x56, 0x78];
+        serialize_into(42, &mut buf);
+        assert_eq!(*buf, [0x12, 0x34, 0x56, 0x78, 42]);
+    }
 }
