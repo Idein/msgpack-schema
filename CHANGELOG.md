@@ -8,9 +8,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Added
 
-- Add `serialize_into`
-- Add the `proptest` feature flag to opt-out `proptest` impls
-
 ### Fixed
 
 ### Removed
@@ -18,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ### Changed
 
 ---
+
+## 1.1.0 - 2023-07-15
+
+### Added
+
+- Add `serialize_into`
+- Add the `proptest` feature flag to opt-out `proptest` impls
 
 ## 1.0.1 - 2023-07-03
 

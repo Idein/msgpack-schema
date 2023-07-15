@@ -3,7 +3,7 @@ default-members = [".", "msgpack-schema-impl", "msgpack-value"]
 
 [package]
 name = "msgpack-schema"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Yuichi Nishiwaki <yuichi.nishiwaki@icloud.com>"]
 edition = "2021"
 description = "A specification language for MessagePack data format"
@@ -19,8 +19,8 @@ default = ["proptest"]
 proptest = ["msgpack-value/proptest"]
 
 [dependencies]
-msgpack-schema-impl = { version = "=1.0.1", path = "./msgpack-schema-impl" }
-msgpack-value = { version = "=1.0.1", path = "./msgpack-value", default-features = false }
+msgpack-schema-impl = { version = "=1.1.0", path = "./msgpack-schema-impl" }
+msgpack-value = { version = "=1.1.0", path = "./msgpack-value", default-features = false }
 rmp = "0.8"
 thiserror = "^1.0.25"
 byteorder = "1"
