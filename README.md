@@ -20,6 +20,10 @@ struct Human {
 
 Compared with other schema languages like `rmp-serde`, `msgpack-schema` allows to specify more compact data representation, e.g., fixints as field keys, fixints as variant keys, etc.
 
+## Feature flags
+
+- `proptest`: Enable `proptest::arbitrary::Arbitrary` impls for `msgpack_value::Value`.
+
 ## Behaviours of serializers and deserializers
 
 ### Structs with named fields

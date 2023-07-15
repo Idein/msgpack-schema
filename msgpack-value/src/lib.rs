@@ -1,7 +1,9 @@
 //! The MessagePack Data Model
 //!
 //! See also the [specification](https://github.com/msgpack/msgpack/blob/master/spec.md).
+#[cfg(feature = "proptest")]
 use proptest::prelude::*;
+#[cfg(feature = "proptest")]
 use proptest_derive::Arbitrary;
 use std::convert::{TryFrom, TryInto};
 use thiserror::Error;
@@ -223,6 +225,7 @@ impl TryFrom<Int> for isize {
     }
 }
 
+#[cfg(feature = "proptest")]
 impl Arbitrary for Int {
     type Parameters = ();
 
@@ -266,7 +269,8 @@ impl Arbitrary for Int {
 ///
 /// Although we strongly recommend you to use string types rather than binary types, this crate does _not_ force you to do so.
 /// The functions and trait implementations provided by this crate are all taking a neutral stand.
-#[derive(Debug, Clone, PartialEq, Eq, Arbitrary)]
+#[cfg_attr(feature = "proptest", derive(Arbitrary))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Str(pub Vec<u8>);
 
 impl From<String> for Str {
@@ -288,7 +292,8 @@ impl Str {
 /// Byte array type.
 ///
 /// As noted in the comment in [Str], using this type in this crate is almost nonsense, unless your data schema is shared by some external data providers.
-#[derive(Debug, Clone, PartialEq, Eq, Arbitrary)]
+#[cfg_attr(feature = "proptest", derive(Arbitrary))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Bin(pub Vec<u8>);
 
 impl Bin {
@@ -302,7 +307,8 @@ impl Bin {
 }
 
 /// User-extended type.
-#[derive(Debug, Clone, PartialEq, Eq, Arbitrary)]
+#[cfg_attr(feature = "proptest", derive(Arbitrary))]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ext {
     pub r#type: i8,
     pub data: Vec<u8>,
@@ -618,6 +624,7 @@ impl TryFrom<Value> for Vec<(Value, Value)> {
     }
 }
 
+#[cfg(feature = "proptest")]
 impl Arbitrary for Value {
     type Parameters = ();
     type Strategy = BoxedStrategy<Value>;
@@ -1061,6 +1068,7 @@ mod tests {
         assert_eq!(Value::Array(vec![msgpack!(-42)]), msgpack!([-42]));
     }
 
+    #[cfg(feature = "proptest")]
     proptest! {
         #[test]
         fn no_panic_arb_int(_ in any::<Int>()) {
