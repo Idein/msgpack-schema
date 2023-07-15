@@ -509,6 +509,9 @@ impl Serializer {
     fn new() -> Self {
         Self { w: vec![] }
     }
+    fn with_vec(w: Vec<u8>) -> Self {
+        Self { w }
+    }
     fn into_inner(self) -> Vec<u8> {
         self.w
     }
@@ -1147,6 +1150,13 @@ impl<T: Deserialize> Deserialize for std::sync::Arc<T> {
 /// Write out a MessagePack object.
 pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
     let mut serializer = Serializer::new();
+    serializer.serialize(s);
+    serializer.into_inner()
+}
+
+/// Write a MessagePack object into the given buffer.
+pub fn serialize_into<S: Serialize>(s: S, buf: Vec<u8>) -> Vec<u8> {
+    let mut serializer = Serializer::with_vec(buf);
     serializer.serialize(s);
     serializer.into_inner()
 }
