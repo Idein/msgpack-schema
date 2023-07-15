@@ -14,9 +14,13 @@ categories = ["encoding"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["proptest"]
+proptest = ["msgpack-value/proptest"]
+
 [dependencies]
 msgpack-schema-impl = { version = "=1.0.1", path = "./msgpack-schema-impl" }
-msgpack-value = { version = "=1.0.1", path = "./msgpack-value" }
+msgpack-value = { version = "=1.0.1", path = "./msgpack-value", default-features = false }
 rmp = "0.8"
 thiserror = "^1.0.25"
 byteorder = "1"
