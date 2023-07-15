@@ -509,6 +509,9 @@ impl Serializer {
     fn new() -> Self {
         Self { w: vec![] }
     }
+    fn with_vec(w: Vec<u8>) -> Self {
+        Self { w }
+    }
     fn into_inner(self) -> Vec<u8> {
         self.w
     }
@@ -1151,6 +1154,16 @@ pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
     serializer.into_inner()
 }
 
+/// Write a MessagePack object into the given buffer.
+///
+/// This function does not modify the data originally in [buf].
+pub fn serialize_into<S: Serialize>(s: S, buf: &mut Vec<u8>) {
+    let v = std::mem::take(buf);
+    let mut serializer = Serializer::with_vec(v);
+    serializer.serialize(s);
+    *buf = serializer.into_inner();
+}
+
 /// Read out a MessagePack object.
 ///
 /// If the input contains extra bytes following a valid msgpack object,
@@ -1420,5 +1433,12 @@ mod tests {
     #[test]
     fn arc_vs_value() {
         check_serialize_result(std::sync::Arc::new(42i32), msgpack!(42));
+    }
+
+    #[test]
+    fn serialize_into_keeps_buf() {
+        let mut buf = vec![0x12, 0x34, 0x56, 0x78];
+        serialize_into(42, &mut buf);
+        assert_eq!(*buf, [0x12, 0x34, 0x56, 0x78, 42]);
     }
 }
