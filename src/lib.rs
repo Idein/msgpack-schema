@@ -1155,10 +1155,13 @@ pub fn serialize<S: Serialize>(s: S) -> Vec<u8> {
 }
 
 /// Write a MessagePack object into the given buffer.
-pub fn serialize_into<S: Serialize>(s: S, buf: Vec<u8>) -> Vec<u8> {
-    let mut serializer = Serializer::with_vec(buf);
+///
+/// This function does not modify the data originally in [buf].
+pub fn serialize_into<S: Serialize>(s: S, buf: &mut Vec<u8>) {
+    let v = std::mem::take(buf);
+    let mut serializer = Serializer::with_vec(v);
     serializer.serialize(s);
-    serializer.into_inner()
+    *buf = serializer.into_inner();
 }
 
 /// Read out a MessagePack object.
